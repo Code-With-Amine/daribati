@@ -1,0 +1,18 @@
+{
+  "manifestUrl": "https://streamspher.com/manifest.json",
+  "packageId": "com.example.daribati",
+  "applicationName": "Daribati",
+  "host": "streamspher.com",
+  "display": "standalone",
+  "themeColor": "#262ee3",
+  "navigationColor": "#262ee3",
+  "backgroundColor": "#ffffff",
+  "launcherName": "Daribati",
+  "edgeToEdge": true,
+  "enableNotifications": false,
+  "enableSplash": true,
+  "customLaunchScreenPath": "",
+  "sha256Fingerprints": [
+    "REPLACE_WITH_YOUR_APP_SIGNING_SHA256_FINGERPRINT"
+  ]
+}
