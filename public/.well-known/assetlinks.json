@@ -1,12 +1,8 @@
-[
-  {
-    "relation": ["delegate_permission/common.handle_all_urls"],
-    "target": {
-      "namespace": "android_app",
-      "package_name": "REPLACE_WITH_YOUR_ANDROID_PACKAGE_NAME",
-      "sha256_cert_fingerprints": [
-        "REPLACE_WITH_YOUR_APP_SIGNING_SHA256_FINGERPRINT"
-      ]
-    }
-  }
-]
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.streamspher.twa",
+        "sha256_cert_fingerprints": ["B1:A9:F3:0D:6C:1E:31:37:48:F3:49:E5:5C:C1:79:C4:54:E1:BC:BC:9A:B1:49:C4:B5:33:A3:5A:27:DB:BE:9B"]
+      }
+    }]
