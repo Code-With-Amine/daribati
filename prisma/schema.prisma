@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  NOTAIRE
+  CLIENT
+}
+
+enum DossierStatus {
+  EN_COURS
+  CHEZ_COMMUNE
+  CHEZ_CONSERVATION
+  TERMINE
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  phone     String?  @db.VarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dossiers        Dossier[]        @relation("ClientDossiers")
+  createdDossiers Dossier[]        @relation("CreatorDossiers")
+  documents       Document[]       @relation("UploadedDocuments")
+  statusHistory   StatusHistory[]  @relation("UserStatusHistories")
+  notes           Note[]
+}
+
+model Dossier {
+  id            String         @id @default(uuid()) @db.Uuid
+  title         String?
+  dossierNumber String         @unique
+
+  clientId String? @db.Uuid
+  client   User?   @relation("ClientDossiers", fields: [clientId], references: [id])
+
+  createdById String? @db.Uuid
+  createdBy   User?   @relation("CreatorDossiers", fields: [createdById], references: [id])
+
+  status      DossierStatus @default(EN_COURS)
+  landRef     String?       @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents     Document[]
+  statusHistory StatusHistory[]
+  notes         Note[]
+
+  @@index([clientId], name: "idx_dossiers_client_id")
+}
+
+model Document {
+  id        String   @id @default(uuid()) @db.Uuid
+  dossierId String   @db.Uuid
+  dossier   Dossier  @relation(fields: [dossierId], references: [id])
+
+  name       String
+  fileUrl    String
+  uploadedById String? @db.Uuid
+  uploadedBy   User?   @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([dossierId], name: "idx_documents_dossier_id")
+}
+
+model StatusHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  dossierId String   @db.Uuid
+  dossier   Dossier  @relation(fields: [dossierId], references: [id])
+
+  status   DossierStatus
+  note     String?
+  changedById String? @db.Uuid
+  changedBy   User?   @relation("UserStatusHistories", fields: [changedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([dossierId], name: "idx_status_history_dossier_id")
+}
+
+model Note {
+  id        String   @id @default(uuid()) @db.Uuid
+  dossierId String   @db.Uuid
+  dossier   Dossier  @relation(fields: [dossierId], references: [id])
+
+  userId String? @db.Uuid
+  user   User?   @relation(fields: [userId], references: [id])
+
+  content   String?
+  createdAt DateTime @default(now())
+}
