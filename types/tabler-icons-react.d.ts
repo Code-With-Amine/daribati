@@ -20,4 +20,5 @@ declare module '@tabler/icons-react' {
   export const IconBuilding: Icon
   export const IconMessage: Icon
   export const IconHome: Icon
+  export const IconFileDescription: Icon
 }

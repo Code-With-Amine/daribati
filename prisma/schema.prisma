@@ -54,6 +54,9 @@ model User {
   notes           Note[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
+  createdContracts  Contract[]
+  contractTemplates ContractTemplate[]
+  contractReferences ContractReference[]
 }
 
 model Dossier {
@@ -81,6 +84,7 @@ model Dossier {
   invitations   Invitation[]
   Favorite      Favorite[]
   messages      Message[]
+  contractReferences ContractReference[]
 
   @@index([clientId], name: "idx_dossiers_client_id")
 }
@@ -179,13 +183,48 @@ model Contract {
   dossierId String   @db.Uuid
   dossier   Dossier  @relation(fields: [dossierId], references: [id])
   title     String
-  content   String
-  type      String?  @db.VarChar(100)
-  parties   Json?
-  generatedAt DateTime @default(now())
+  content   String          @db.Text
+  method    String?         @default("AI") // "AI", "TEMPLATE", "INSPIRATION"
+  prompt    String?         @db.Text
+  templateId String?        @db.Uuid
+  template  ContractTemplate? @relation(fields: [templateId], references: [id])
+  templateData Json?        // placeholder -> value mapping
+  referenceIds String[]     // IDs of contracts used as inspiration
+  createdById String?       @db.Uuid
+  createdBy   User?         @relation(fields: [createdById], references: [id])
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([dossierId], name: "idx_contracts_dossier_id")
+}
+
+model ContractTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  content     String   @db.Text    // Template with {{PLACEHOLDERS}}
+  category    String?  // "vente", "location", "donation", "constitution", etc.
+  createdById String   @db.Uuid
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  contracts   Contract[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdById], name: "idx_template_creator")
+}
+
+model ContractReference {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  content     String   @db.Text    // Full contract text
+  createdById String   @db.Uuid
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  dossierId   String?  @db.Uuid
+  dossier     Dossier? @relation(fields: [dossierId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([createdById], name: "idx_ref_creator")
 }
 
 model Invitation {

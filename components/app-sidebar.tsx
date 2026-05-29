@@ -15,6 +15,7 @@ import {
   IconBuilding,
   IconMessage,
   IconHome,
+  IconFileDescription,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -38,6 +39,7 @@ const data = {
   navMain: [
     { title: "Tableau de bord", url: "/notaire/dashboard", icon: <IconDashboard className="w-5 h-5" /> },
     { title: "Dossiers", url: "/notaire/dossiers", icon: <IconListDetails className="w-5 h-5" /> },
+    { title: "Contrats", url: "/notaire/contracts", icon: <IconFileDescription className="w-5 h-5" /> },
     { title: "Clients", url: "/notaire/clients", icon: <IconUsers className="w-5 h-5" /> },
     { title: "Statistiques", url: "/notaire/dashboard", icon: <IconChartBar className="w-5 h-5" /> },
     { title: "Messages", url: "/notaire/messages", icon: <IconMessage className="w-5 h-5" /> },

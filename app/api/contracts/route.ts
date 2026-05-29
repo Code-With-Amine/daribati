@@ -1,65 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireNotaire } from '@/app/api/auth/middleware'
-
-const PARTY_TYPES = ['citizen', 'company', 'government_entity'] as const
-
-function generateContractContent(data: {
-  buyerName: string
-  buyerType: string
-  sellerName: string
-  sellerType: string
-  propertyAddress: string
-  propertyDescription: string
-  price: number
-  notaireName: string
-}): string {
-  const date = new Date().toLocaleDateString('fr-FR', {
-    day: 'numeric', month: 'long', year: 'numeric'
-  })
-
-  return `CONTRAT DE VENTE
-
-Le ${date},
-
-Entre les soussignés :
-
-${data.sellerType === 'company' ? 'La Société' : 'Monsieur/Madame'} ${data.sellerName},
-ci-après dénommé "Le Vendeur",
-
-D'une part,
-
-ET
-
-${data.buyerType === 'company' ? 'La Société' : 'Monsieur/Madame'} ${data.buyerName},
-ci-après dénommé "L'Acquéreur",
-
-D'autre part,
-
-IL A ÉTÉ CONVENU ET ARRÊTÉ CE QUI SUIT :
-
-Article 1 - DÉSIGNATION DU BIEN
-Le Vendeur vend à l'Acquéreur, qui accepte, le bien immobilier suivant :
-${data.propertyAddress}
-${data.propertyDescription}
-
-Article 2 - PRIX
-La vente est consentie et acceptée au prix de ${data.price.toLocaleString('fr-FR')} Dirhams.
-
-Article 3 - CONDITIONS DE LA VENTE
-La présente vente est faite aux charges et conditions ordinaires et de droit.
-
-Article 4 - JOUISSANCE
-L'Acquéreur aura la jouissance du bien à compter de la signature du présent acte.
-
-Article 5 - FRAIS
-Tous les frais, droits et émoluments du présent acte sont à la charge de l'Acquéreur.
-
-Fait à ${data.notaireName ? `l'étude de Maître ${data.notaireName}` : '[Ville]'},
-en autant d'originaux que de parties.
-
-Le Vendeur                    L'Acquéreur`
-}
+import { generateContract } from '@/lib/contract-engine'
 
 export async function POST(req: Request) {
   const auth = await requireNotaire(req)
@@ -67,35 +9,51 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json()
-    const { dossierId, buyerName, buyerType, sellerName, sellerType, propertyAddress, propertyDescription, price } = body
+    const {
+      dossierId, title, prompt, method = 'AI',
+      referenceIds, templateId, templateVariables
+    } = body
 
-    if (!dossierId || !buyerName || !sellerName) {
-      return NextResponse.json({ error: 'Information minimale requise (dossierId, buyerName, sellerName)' }, { status: 400 })
+    if (!dossierId) {
+      return NextResponse.json({ error: 'dossierId requis' }, { status: 400 })
     }
 
     const dossier = await prisma.dossier.findUnique({ where: { id: dossierId } })
     if (!dossier) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
 
-    const notaireName = auth.user?.name || 'Notaire'
+    if (method === 'TEMPLATE' && !templateId) {
+      return NextResponse.json({ error: 'templateId requis pour la méthode TEMPLATE' }, { status: 400 })
+    }
 
-    const content = generateContractContent({
-      buyerName: buyerName || 'Acheteur',
-      buyerType: buyerType || 'citizen',
-      sellerName: sellerName || 'Vendeur',
-      sellerType: sellerType || 'citizen',
-      propertyAddress: propertyAddress || dossier.landRef || 'Adresse du bien',
-      propertyDescription: propertyDescription || 'Bien immobilier',
-      price: parseFloat(price) || 0,
-      notaireName,
+    if ((method === 'AI' || method === 'INSPIRATION') && !prompt) {
+      return NextResponse.json({ error: 'prompt requis pour la méthode ' + method }, { status: 400 })
+    }
+
+    const result = await generateContract({
+      prompt: prompt || '',
+      dossierId,
+      method,
+      referenceIds,
+      templateId,
+      templateVariables,
+      notaireName: auth.user?.name,
     })
+
+    const dbTitle = title
+      || (templateId ? (await prisma.contractTemplate.findUnique({ where: { id: templateId } }))?.name : null)
+      || `Contrat - ${dossier.dossierNumber}`
 
     const contract = await prisma.contract.create({
       data: {
         dossierId,
-        title: `Contrat de vente - ${buyerName} / ${sellerName}`,
-        content,
-        type: 'VENTE_IMMOBILIERE',
-        parties: { buyer: { name: buyerName, type: buyerType }, seller: { name: sellerName, type: sellerType } },
+        title: dbTitle,
+        content: result.content,
+        method: result.method,
+        prompt: result.prompt || null,
+        templateId: result.templateId || null,
+        templateData: result.templateData || undefined,
+        referenceIds: result.referenceIds || [],
+        createdById: auth.user!.id,
       },
     })
 
@@ -117,7 +75,8 @@ export async function GET(req: Request) {
 
   const contracts = await prisma.contract.findMany({
     where,
-    orderBy: { generatedAt: 'desc' },
+    orderBy: { createdAt: 'desc' },
+    include: { template: true },
   })
 
   return NextResponse.json({ contracts })
