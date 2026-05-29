@@ -39,7 +39,7 @@ async function getData(dossierId: string) {
       documents: true,
       statusHistory: { orderBy: { createdAt: 'desc' } },
       payments: true,
-      contracts: { orderBy: { generatedAt: 'desc' } },
+      contracts: { orderBy: { createdAt: 'desc' } },
       notes: true,
     },
   })

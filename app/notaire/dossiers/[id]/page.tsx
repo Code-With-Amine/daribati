@@ -18,7 +18,7 @@ async function getDossier(idOrRef: string) {
     client: { select: { id: true, name: true, email: true, phone: true, cin: true } },
     statusHistory: { orderBy: { createdAt: 'desc' as const } },
     payments: { orderBy: { createdAt: 'desc' as const } },
-    contracts: { orderBy: { generatedAt: 'desc' as const } },
+    contracts: { orderBy: { createdAt: 'desc' as const } },
     notes: { orderBy: { createdAt: 'desc' as const } },
     createdBy: { select: { name: true } },
   }
