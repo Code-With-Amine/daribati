@@ -58,7 +58,6 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "prisma": "^5.13.0",
