@@ -131,7 +131,8 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
       styles: { fontSize: 10 },
     })
 
-    const finalY = (doc as any).lastAutoTable?.finalY || 140
+  const lastAutoTable = (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable
+  const finalY = lastAutoTable?.finalY || 140
     doc.setFontSize(12)
     doc.text("Explication des majorations:", 40, finalY + 30)
     doc.setFontSize(10)

@@ -23,6 +23,7 @@ import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import {
   Sidebar,
   SidebarContent,
@@ -117,7 +118,7 @@ const data = {
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/notaire/settings",
       icon: <IconSettings className="w-5 h-5" />,
     },
     {
@@ -150,31 +151,40 @@ const data = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ user, navMain, documents, navSecondary, ...props }: { user?: any; navMain?: any; documents?: any; navSecondary?: any } & React.ComponentProps<typeof Sidebar>) {
+  // Use provided props (from pages) or fallback demo data
+  const fallbackUser = user ?? data.user
+  const itemsMain = navMain ?? data.navMain
+  const itemsDocs = documents ?? data.documents
+  const itemsSecondary = navSecondary ?? data.navSecondary
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-            >
-              <a href="#">
-                <IconInnerShadowTop className="size-5!" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">
+                <a href="/notaire/dashboard" className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    {fallbackUser?.avatar ? (
+                      <AvatarImage src={fallbackUser.avatar} alt={fallbackUser.name} />
+                    ) : (
+                      <AvatarFallback>{(fallbackUser?.name || 'U').slice(0,2)}</AvatarFallback>
+                    )}
+                  </Avatar>
+                  <span className="text-base font-semibold truncate">{fallbackUser?.name || 'User'}</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={itemsMain} />
+        <NavDocuments items={itemsDocs} />
+        <NavSecondary items={itemsSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={fallbackUser} />
       </SidebarFooter>
     </Sidebar>
   )

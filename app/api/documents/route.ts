@@ -3,16 +3,30 @@ import { prisma } from '@/lib/db'
 
 export async function POST(req: Request) {
   try {
-    const body = await req.formData()
-    const dossierId = body.get('dossierId') as string
-    const name = body.get('name') as string
-    const fileUrl = body.get('fileUrl') as string
+    // Accept both form-data (from legacy clients) and JSON
+    let dossierId: string | undefined
+    let name: string | undefined
+    let fileUrl: string | undefined
 
-    if (!dossierId || !name || !fileUrl) return NextResponse.json({ error: 'Missing' }, { status: 400 })
+    const contentType = req.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+      const body = await req.json()
+      dossierId = body.dossierId
+      name = body.name
+      fileUrl = body.fileUrl
+    } else {
+      const form = await req.formData()
+      dossierId = form.get('dossierId') as string
+      name = form.get('name') as string
+      fileUrl = form.get('fileUrl') as string
+    }
+
+  if (!dossierId || !name || !fileUrl) return NextResponse.json({ error: 'Dossier, nom ou url de fichier manquant' }, { status: 400 })
 
     const doc = await prisma.document.create({ data: { dossierId, name, fileUrl } })
-    return NextResponse.redirect(`/notaire/dossiers/${dossierId}`)
+    return NextResponse.json({ doc }, { status: 201 })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 })
+    console.error('POST /api/documents error:', err)
+    return NextResponse.json({ error: 'Impossible de créer le document. Réessayez plus tard.' }, { status: 500 })
   }
 }

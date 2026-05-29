@@ -5,7 +5,7 @@ import { SectionCards } from "@/components/section-cards"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
-import data from "./data.json"
+import rawData from "./data.json"
 
 export default function Page() {
   return (
@@ -27,7 +27,8 @@ export default function Page() {
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>
-              <DataTable data={data} />
+              {/* map incoming sample data to the DataTable schema: { id, ref, client, date, status } */}
+              <DataTable data={rawData.map((it: any) => ({ id: it.id, ref: it.header, client: it.reviewer || '—', date: it.target || '-', status: it.status }))} />
             </div>
           </div>
         </div>

@@ -26,20 +26,27 @@ model User {
   password  String
   role      Role
   phone     String?  @db.VarChar(20)
+  avatar    String?  @db.VarChar(255)
+  cin       String?  @db.VarChar(50)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  dossiers        Dossier[]        @relation("ClientDossiers")
-  createdDossiers Dossier[]        @relation("CreatorDossiers")
-  documents       Document[]       @relation("UploadedDocuments")
-  statusHistory   StatusHistory[]  @relation("UserStatusHistories")
+  // Self-relation: a Notaire can have many client Users
+  notaireId String? @db.Uuid
+  notaire   User?   @relation("NotaireClients", fields: [notaireId], references: [id])
+  clients   User[]  @relation("NotaireClients")
+
+  dossiers        Dossier[]       @relation("ClientDossiers")
+  createdDossiers Dossier[]       @relation("CreatorDossiers")
+  documents       Document[]      @relation("UploadedDocuments")
+  statusHistory   StatusHistory[] @relation("UserStatusHistories")
   notes           Note[]
 }
 
 model Dossier {
-  id            String         @id @default(uuid()) @db.Uuid
+  id            String  @id @default(uuid()) @db.Uuid
   title         String?
-  dossierNumber String         @unique
+  dossierNumber String  @unique
 
   clientId String? @db.Uuid
   client   User?   @relation("ClientDossiers", fields: [clientId], references: [id])
@@ -47,8 +54,8 @@ model Dossier {
   createdById String? @db.Uuid
   createdBy   User?   @relation("CreatorDossiers", fields: [createdById], references: [id])
 
-  status      DossierStatus @default(EN_COURS)
-  landRef     String?       @db.VarChar(255)
+  status  DossierStatus @default(EN_COURS)
+  landRef String?       @db.VarChar(255)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -56,17 +63,19 @@ model Dossier {
   documents     Document[]
   statusHistory StatusHistory[]
   notes         Note[]
+  invitations   Invitation[]
+  Favorite      Favorite[]
 
   @@index([clientId], name: "idx_dossiers_client_id")
 }
 
 model Document {
-  id        String   @id @default(uuid()) @db.Uuid
-  dossierId String   @db.Uuid
-  dossier   Dossier  @relation(fields: [dossierId], references: [id])
+  id        String  @id @default(uuid()) @db.Uuid
+  dossierId String  @db.Uuid
+  dossier   Dossier @relation(fields: [dossierId], references: [id])
 
-  name       String
-  fileUrl    String
+  name         String
+  fileUrl      String
   uploadedById String? @db.Uuid
   uploadedBy   User?   @relation("UploadedDocuments", fields: [uploadedById], references: [id])
 
@@ -76,14 +85,14 @@ model Document {
 }
 
 model StatusHistory {
-  id        String   @id @default(uuid()) @db.Uuid
-  dossierId String   @db.Uuid
-  dossier   Dossier  @relation(fields: [dossierId], references: [id])
+  id        String  @id @default(uuid()) @db.Uuid
+  dossierId String  @db.Uuid
+  dossier   Dossier @relation(fields: [dossierId], references: [id])
 
-  status   DossierStatus
-  note     String?
-  changedById String? @db.Uuid
-  changedBy   User?   @relation("UserStatusHistories", fields: [changedById], references: [id])
+  status      DossierStatus
+  note        String?
+  changedById String?       @db.Uuid
+  changedBy   User?         @relation("UserStatusHistories", fields: [changedById], references: [id])
 
   createdAt DateTime @default(now())
 
@@ -91,13 +100,36 @@ model StatusHistory {
 }
 
 model Note {
-  id        String   @id @default(uuid()) @db.Uuid
-  dossierId String   @db.Uuid
-  dossier   Dossier  @relation(fields: [dossierId], references: [id])
+  id        String  @id @default(uuid()) @db.Uuid
+  dossierId String  @db.Uuid
+  dossier   Dossier @relation(fields: [dossierId], references: [id])
 
   userId String? @db.Uuid
   user   User?   @relation(fields: [userId], references: [id])
 
   content   String?
   createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(uuid()) @db.Uuid
+  dossierId String   @db.Uuid
+  dossier   Dossier  @relation(fields: [dossierId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([dossierId], name: "idx_favorites_dossier_id")
+}
+
+model Invitation {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String
+  name      String?
+  token     String   @unique
+  dossierId String?  @db.Uuid
+  dossier   Dossier? @relation(fields: [dossierId], references: [id])
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([dossierId], name: "idx_invitation_dossier_id")
 }

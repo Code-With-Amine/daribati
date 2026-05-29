@@ -56,10 +56,12 @@ export const FieldSeparator: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   </div>
 );
 
+type NextPageProps = React.ComponentProps<'div'> & { searchParams?: any; params?: any }
+
 export default function LoginPage({
   className,
   ...props
-}: React.ComponentProps<"div">) {
+}: NextPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,7 +70,7 @@ export default function LoginPage({
 
   // Next may pass `searchParams` / `params` to page components; avoid forwarding
   // those to DOM elements when we spread `props` into a div. Remove them here.
-  const { searchParams, params, ...safeProps } = props as any;
+  const { searchParams, params, ...safeProps } = props
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
