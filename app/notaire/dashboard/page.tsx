@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/db'
 import { ChartAreaInteractive } from '@/components/chart-area-interactive'
 import { DataTable } from '@/components/data-table'
-import SectionCardsDynamic from '@/components/section-cards-dynamic'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowUpRight, FileText, Users, FolderOpen, Euro } from 'lucide-react'
