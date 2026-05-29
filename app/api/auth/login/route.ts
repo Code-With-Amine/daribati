@@ -19,6 +19,8 @@ export async function POST(req: Request) {
     const user = await prisma.user.findUnique({ where: { email } })
     if (!user) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
 
+    if (user.disabled) return NextResponse.json({ error: 'Account disabled' }, { status: 403 })
+
     const ok = await bcrypt.compare(password, user.password)
     if (!ok) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
 

@@ -2,9 +2,10 @@ import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
-import { Scale, LogOut, MessageSquare } from 'lucide-react'
+import { Scale, LogOut, MessageSquare, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { ModeToggle } from '@/components/ui/toggole-mode'
 
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
@@ -29,11 +30,17 @@ export default async function ClientLayout({ children }: { children: React.React
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">Espace Client</span>
             </div>
             <div className="flex items-center gap-2">
+              <Link href="/">
+                <Button variant="ghost" size="sm" className="text-muted-foreground">
+                  <Home className="w-4 h-4 mr-1" /> Accueil
+                </Button>
+              </Link>
               <Link href="/client/messages">
                 <Button variant="ghost" size="sm" className="text-muted-foreground">
                   <MessageSquare className="w-4 h-4 mr-1" /> Messages
                 </Button>
               </Link>
+              <ModeToggle />
               <span className="text-sm text-muted-foreground">{user.name}</span>
               <form action="/api/auth/logout" method="POST">
                 <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
