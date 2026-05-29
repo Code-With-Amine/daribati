@@ -14,8 +14,8 @@ async function getData() {
   const newClients = await prisma.user.count({ where: { role: 'CLIENT' } })
 
   const payments = await prisma.payment.findMany({ select: { amount: true, paidAmount: true, status: true } })
-  const totalRevenue = payments.filter(p => p.status === 'PAID').reduce((s, p) => s + p.paidAmount, 0)
-  const totalUnpaid = payments.filter(p => p.status === 'UNPAID' || p.status === 'PARTIAL').reduce((s, p) => s + (p.amount - p.paidAmount), 0)
+  const totalRevenue = payments.filter((p: any) => p.status === 'PAID').reduce((s: number, p: any) => s + p.paidAmount, 0)
+  const totalUnpaid = payments.filter((p: any) => p.status === 'UNPAID' || p.status === 'PARTIAL').reduce((s: number, p: any) => s + (p.amount - p.paidAmount), 0)
 
   const recent = await prisma.dossier.findMany({
     take: 10,

@@ -16,10 +16,10 @@ export async function GET(req: Request) {
       where.dossierId = dossierId
     } else if (user.role === 'NOTAIRE') {
       const dossiers = await prisma.dossier.findMany({ where: { createdById: user.id }, select: { id: true } })
-      where.dossierId = { in: dossiers.map(d => d.id) }
+      where.dossierId = { in: dossiers.map((d: { id: string }) => d.id) }
     } else if (user.role === 'CLIENT') {
       const dossiers = await prisma.dossier.findMany({ where: { clientId: user.id }, select: { id: true } })
-      where.dossierId = { in: dossiers.map(d => d.id) }
+      where.dossierId = { in: dossiers.map((d: { id: string }) => d.id) }
     }
 
     const notes = await prisma.note.findMany({

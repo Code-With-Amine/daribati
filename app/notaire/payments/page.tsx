@@ -18,9 +18,9 @@ export default async function PaymentsPage() {
     take: 50,
   })
 
-  const totalUnpaid = payments.filter(p => p.status === 'UNPAID').reduce((s, p) => s + (p.amount - p.paidAmount), 0)
-  const totalCollected = payments.filter(p => p.status === 'PAID').reduce((s, p) => s + p.paidAmount, 0)
-  const partialCount = payments.filter(p => p.status === 'PARTIAL').length
+  const totalUnpaid = payments.filter((p: any) => p.status === 'UNPAID').reduce((s: number, p: any) => s + (p.amount - p.paidAmount), 0)
+  const totalCollected = payments.filter((p: any) => p.status === 'PAID').reduce((s: number, p: any) => s + p.paidAmount, 0)
+  const partialCount = payments.filter((p: any) => p.status === 'PARTIAL').length
 
   const summaryCards = [
     { label: 'Total encaissé', value: `${totalCollected.toLocaleString('fr-FR')} DH`, icon: TrendingUp, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-950/20' },
@@ -62,7 +62,7 @@ export default async function PaymentsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments.map((p) => {
+              {payments.map((p: any) => {
                 const cfg = statusConfig[p.status] || { label: p.status, variant: 'outline' as const }
                 return (
                   <TableRow key={p.id} className="hover:bg-muted/50">
