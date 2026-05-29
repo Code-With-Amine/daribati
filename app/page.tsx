@@ -1,261 +1,116 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import Link from "next/link";
-import {
-  MapPinned ,
-  Ban,
-  Car,
-  ParkingSquare,
-  Trees,
-  LandPlot,
-  FileText,
-  Calculator,
-  LifeBuoy,
-  ChevronRight,
-} from "lucide-react";
-import Nav from "@/components/Nav";
-import FooterNav from "@/components/Footer";
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 
-const navigationItems = [
-  {
-    id: 10,
-    title: "Voir votre Terran position",
-    subtitle: "foncière en Z1 ou Z2",
-    description: "Voir votre Terran position dans la nouvelle tarification TNB",
-    icon: MapPinned ,
-    color: "from-gray-500/20 to-gray-600/20",
-    hoverColor: "hover:from-gray-500/30 hover:to-gray-600/30",
-    borderColor: "border-gray-200/50",
-    link: "/newTNB",
-  },
-  {
-    id: 2,
-    title: "Terrains non bâtis (Non exonérés)",
-    subtitle: "Soumis à la taxe",
-    description: "Visualisez les terrains non exonérés",
-    icon: LandPlot,
-    color: "from-red-500/20 to-red-600/20",
-    hoverColor: "hover:from-red-500/30 hover:to-red-600/30",
-    borderColor: "border-red-200/50",
-    link: "/terrainNonExo",
-  },
-  {
-    id: 1,
-    title: "Terrains non bâtis (Exonérés)",
-    subtitle: "Terrains sans construction",
-    description: "Consultez les terrains exemptés de la taxe",
-    icon: Ban,
-    color: "from-green-500/20 to-green-600/20",
-    hoverColor: "hover:from-green-500/30 hover:to-green-600/30",
-    borderColor: "border-green-200/50",
-    link: "/terrainExo",
-  },
-  {
-    id: 9,
-    title: "Taxi",
-    subtitle: "Soumis à la Taxi",
-    description: "Visualisez les droit de taxi",
-    icon: Car,
-    color: "from-blue-500/20 to-blue-600/20",
-    hoverColor: "hover:from-blue-500/30 hover:to-blue-600/30",
-    borderColor: "border-blue-200/50",
-    link: "/Taxi",
-  },
-  {
-    id: 3,
-    title: "Droit de stationnement",
-    subtitle: "Taxe sur les taxis",
-    description: "Informations sur les droits de stationnement",
-    icon: ParkingSquare,
-    color: "from-blue-500/20 to-blue-600/20",
-    hoverColor: "hover:from-blue-500/30 hover:to-blue-600/30",
-    borderColor: "border-blue-200/50",
-    link: "/error",
-  },
-  {
-    id: 4,
-    title: "Début de boisson",
-    subtitle: "Taxe pour établissement",
-    description: "Gestion de la taxe pour début d'activité de boisson",
-    icon: Trees,
-    color: "from-amber-500/20 to-amber-600/20",
-    hoverColor: "hover:from-amber-500/30 hover:to-amber-600/30",
-    borderColor: "border-amber-200/50",
-    link: "/error",
-  },
-  {
-    id: 5,
-    title: "Occupation du domaine public",
-    subtitle: "Utilisation du domaine public",
-    description: "Suivi de l’occupation des espaces publics",
-    icon: MapPinned,
-    color: "from-purple-500/20 to-purple-600/20",
-    hoverColor: "hover:from-purple-500/30 hover:to-purple-600/30",
-    borderColor: "border-purple-200/50",
-    link: "/error",
-  },
-  {
-    id: 6,
-    title: "Documents",
-    subtitle: "Fichiers importants",
-    description: "Téléchargez ou consultez vos documents",
-    icon: FileText,
-    color: "from-sky-500/20 to-sky-600/20",
-    hoverColor: "hover:from-sky-500/30 hover:to-sky-600/30",
-    borderColor: "border-sky-200/50",
-    link: "/error",
-  },
-  /*{
-    id: 7,
-    title: "Calcul de la taxe urbaine",
-    subtitle: "Simulateur intelligent",
-    description: "Découvrez comment calculer votre taxe urbaine",
-    icon: Calculator,
-    color: "from-indigo-500/20 to-indigo-600/20",
-    hoverColor: "hover:from-indigo-500/30 hover:to-indigo-600/30",
-    borderColor: "border-indigo-200/50",
-    link: "/error",
-  },
-  {
-    id: 8,
-    title: "Support",
-    subtitle: "Aide et assistance",
-    description: "Contactez-nous pour toute question",
-    icon: LifeBuoy,
-    color: "from-gray-500/20 to-gray-600/20",
-    hoverColor: "hover:from-gray-500/30 hover:to-gray-600/30",
-    borderColor: "border-gray-200/50",
-    link: "/error",
-  },*/
-];
+export default function HomePage() {
+  const router = useRouter()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [role, setRole] = useState<string | null>(null)
 
-export default function VerticalNavLanding() {
-  const [hoveredItem, setHoveredItem] = useState<number | null>(null);
-  const headerTitle =
-    "Bonjour, \nVous trouverez ici les taxes perçues par la Régie et vous pourrez calculer votre taxe 🧾.";
-  const intoText = "Choisissez la taxe que vous souhaitez payer";
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    const userStr = localStorage.getItem("user")
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        setIsLoggedIn(true)
+        setRole(user.role)
+      } catch {}
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isLoggedIn && role === "NOTAIRE") {
+      router.push("/notaire/dashboard")
+    } else if (isLoggedIn && role === "CLIENT") {
+      router.push("/client")
+    }
+  }, [isLoggedIn, role, router])
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        <Nav />
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-bold text-slate-800 mb-4">
-            {headerTitle}
-          </h1>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto my-22">
-            {intoText}
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
+      <header className="px-6 py-4 flex items-center justify-between border-b bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-[#262EE3] rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">NF</span>
+          </div>
+          <span className="font-bold text-xl text-slate-800">NotaireFlow</span>
         </div>
+        <div className="flex items-center gap-3">
+          <Link href="/login">
+            <Button variant="outline" className="border-[#262EE3] text-[#262EE3] hover:bg-[#262EE3] hover:text-white">
+              Connexion
+            </Button>
+          </Link>
+        </div>
+      </header>
 
-        <nav className="flex flex-wrap gap-4 md:gap-6">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            const isHovered = hoveredItem === item.id;
+      <main className="flex-1 flex items-center justify-center p-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="w-16 h-16 bg-[#262EE3] rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <span className="text-white font-bold text-2xl">NF</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold text-slate-800 mb-4">
+            NotaireFlow
+          </h1>
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto mb-8">
+            Plateforme numérique de gestion de dossiers notariaux.
+            Gérez vos clients, dossiers, documents et paiements en toute simplicité.
+          </p>
 
-            return (
-              <div
-                key={item.id}
-              className={`
-                  group relative
-                  w-[calc(100%-0.5rem)]
-                  lg:w-[calc(50%-0.75rem)]
-                  p-6 md:p-8
-                  rounded-2xl border-2
-                  bg-[#C7C7C9]/[0.38]
-                  border-slate-200
-                  backdrop-blur-sm cursor-pointer
-                  transition-all duration-500 ease-out
-                  transform
-                  hover:scale-[1.02]
-                  hover:-translate-y-1
-                  hover:shadow-2xl hover:shadow-black/10
-                  hover:bg-gradient-to-r
-                  hover:from-[#262EE3]
-                  hover:to-[#150AA3]
-                  ${isHovered
-                    ? "scale-[1.02] -translate-y-1 shadow-2xl shadow-black/10"
-                    : "shadow-lg shadow-black/5"
-                  }
-                `}
-                onMouseEnter={() => setHoveredItem(item.id)}
-                onMouseLeave={() => setHoveredItem(null)}
-              >
-                <Link href={item.link}>
-                  {/* 3D Background Effect */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/40 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
+            <Card className="border-slate-200 hover:shadow-lg transition-shadow">
+              <CardContent className="p-6 text-center">
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="font-semibold">Dossiers numériques</h3>
+                <p className="text-sm text-slate-500 mt-1">Centralisez tous vos dossiers en un endroit</p>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 hover:shadow-lg transition-shadow">
+              <CardContent className="p-6 text-center">
+                <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="font-semibold">Suivi en temps réel</h3>
+                <p className="text-sm text-slate-500 mt-1">Clients informés à chaque étape</p>
+              </CardContent>
+            </Card>
+            <Card className="border-slate-200 hover:shadow-lg transition-shadow">
+              <CardContent className="p-6 text-center">
+                <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="font-semibold">Gain de temps</h3>
+                <p className="text-sm text-slate-500 mt-1">Plus de papier, plus de fichiers éparpillés</p>
+              </CardContent>
+            </Card>
+          </div>
 
-                  {/* Content */}
-                  <div className="relative flex items-center justify-between">
-                    <div className="flex items-center space-x-6">
-                      {/* Icon with 3D effect */}
-                      <div
-                        className={`
-                      p-4 rounded-xl bg-white/80 backdrop-blur-sm
-                      shadow-lg transform transition-all duration-300
-                      group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-xl
-                      ${isHovered ? "scale-110 rotate-3 shadow-xl" : ""}
-                    `}
-                      >
-                        <Icon className="w-8 h-8 text-slate-700" />
-                      </div>
+          <div className="flex items-center justify-center gap-4">
+            <Link href="/login">
+              <Button className="bg-[#262EE3] hover:bg-[#150AA3] text-white px-8 py-6 text-lg">
+                Accéder à votre espace
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </main>
 
-                      {/* Text Content */}
-                      <div className="flex-1">
-                        <h3 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2 transition-colors duration-300 group-hover:text-white">
-                          {item.title}
-                        </h3>
-                        <p className="text-slate-600 font-medium mb-1 transition-colors duration-300 group-hover:text-white/90">
-                          {item.subtitle}
-                        </p>
-                        <p
-                          className={`
-                        text-slate-500 transition-all duration-500 transform group-hover:text-white/80
-                        ${isHovered
-                              ? "opacity-100 translate-x-2"
-                              : "opacity-70 translate-x-0"
-                            }
-                      `}
-                        >
-                          {item.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Arrow with animation */}
-                    <div
-                      className={`
-                    transform transition-all duration-300
-                    ${isHovered
-                          ? "translate-x-2 scale-110"
-                          : "translate-x-0 scale-100"
-                        }
-                  `}
-                    >
-                      <ChevronRight className="w-8 h-8 text-slate-400 group-hover:text-slate-600 group-hover:text-white" />
-                    </div>
-                  </div>
-
-                  {/* Bottom highlight bar */}
-                  <div
-                    className={`
-                  absolute bottom-0 left-6 right-6 h-1 rounded-full
-                  bg-gradient-to-r ${item.color.replace("/20", "/60")}
-                  transform transition-all duration-500 origin-left
-                  ${isHovered
-                        ? "scale-x-100 opacity-100"
-                        : "scale-x-0 opacity-0"
-                      }
-                `}
-                  />
-                </Link>
-              </div>
-            );
-          })}
-          <FooterNav />
-        </nav>
-        <div className="text-center mt-16 text-slate-500"></div>
-      </div>
+      <footer className="px-6 py-4 text-center text-sm text-slate-400 border-t bg-white/50">
+        &copy; {new Date().getFullYear()} NotaireFlow. Tous droits réservés.
+      </footer>
     </div>
-  );
+  )
 }

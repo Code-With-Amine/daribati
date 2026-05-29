@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NotaireFlow - Legal Transaction Management System
+
+## Overview
+A full-stack application for **Notaires** to manage legal cases and **clients** to track their transactions securely.
+
+## Features Delivered
+- **Authentication**: JWT-based login for Notaires and Clients
+- **API Endpoints**:
+  - Client dashboard (`GET /api/dossiers/client/:id`)
+  - Dossier management (`PUT /api/dossiers/:id`) with role checks
+  - AI contract generation (`POST /api/contracts/generate`)
+  - Document upload with role-based access
+  - Payment receipts (`POST /api/payments`)
+- **Middleware**: Role validation for Notaires and Clients
 
 ## Getting Started
+1. **Clone the repo**: `git clone <repo-url>`
+2. **Install dependencies**: `npm install`
+3. **Set up Prisma**: `npx prisma db push`
+4. **Run the application**: `npm run dev`
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Environment Variables
+Create a `.env` file in your project root:
+```env
+JWT_SECRET='your_secure_jwt_key'
+OPENAI_API_KEY='your_openai_api_key'
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deployment
+This app can be deployed to:
+- **Vercel**: Use the Vercel CLI (`vercel --prod`) to deploy
+- **Render**: Deploy using the provided Dockerfile
+- **AWS**: Configure EC2 instance with Node.js and PostgreSQL
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
+- **Notaires**:
+  - Use the admin dashboard to update dossiers and generate contracts
+  - Upload client documents via `documents/upload`
+- **Clients**:
+  - View their dossier and transaction history via the client dashboard
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Final Notes
+All features are secured with role-based access control. Ensure you:
+- Keep environment variables secure
+- Validate all backend responses before sending to client-side
+- Test AI-generated contracts for edge cases

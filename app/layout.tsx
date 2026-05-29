@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import "./globals.css";
+import { Toaster } from '@/components/ui/sonner'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TNB Tax Calculator | Estimate Your Unpaid Taxes Instantly",
-  description: "Easily calculate unpaid TNB (Taxe sur les terrains non bâtis) taxes for multiple years. Free, accurate, and optimized for property owners and developers in Morocco.",
+  title: "NotaireFlow | Gestion de dossiers notariaux",
+  description: "Plateforme de gestion numérique pour notaires. Gérez vos dossiers, clients, documents et paiements en un seul endroit.",
 };
 
 
@@ -42,7 +44,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <TooltipProvider>
+            {children}
+            {/* global toaster for sonner toasts */}
+            <Toaster />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

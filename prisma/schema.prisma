@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  NOTAIRE
+  CLIENT
+}
+
+enum DossierStatus {
+  EN_COURS
+  DOCUMENTS_MANQUANTS
+  CHEZ_COMMUNE
+  CHEZ_CONSERVATION
+  VALIDATION_BANCAIRE
+  EN_ATTENTE_SIGNATURE
+  TERMINE
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  phone     String?  @db.VarChar(20)
+  avatar    String?  @db.VarChar(255)
+  cin       String?  @db.VarChar(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Self-relation: a Notaire can have many client Users
+  notaireId String? @db.Uuid
+  notaire   User?   @relation("NotaireClients", fields: [notaireId], references: [id])
+  clients   User[]  @relation("NotaireClients")
+
+  dossiers        Dossier[]       @relation("ClientDossiers")
+  createdDossiers Dossier[]       @relation("CreatorDossiers")
+  documents       Document[]      @relation("UploadedDocuments")
+  statusHistory   StatusHistory[] @relation("UserStatusHistories")
+  notes           Note[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+model Dossier {
+  id            String  @id @default(uuid()) @db.Uuid
+  title         String?
+  dossierNumber String  @unique
+
+  clientId String? @db.Uuid
+  client   User?   @relation("ClientDossiers", fields: [clientId], references: [id])
+
+  createdById String? @db.Uuid
+  createdBy   User?   @relation("CreatorDossiers", fields: [createdById], references: [id])
+
+  status  DossierStatus @default(EN_COURS)
+  landRef String?       @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents     Document[]
+  statusHistory StatusHistory[]
+  notes         Note[]
+  payments      Payment[]
+  contracts     Contract[]
+  invitations   Invitation[]
+  Favorite      Favorite[]
+  messages      Message[]
+
+  @@index([clientId], name: "idx_dossiers_client_id")
+}
+
+model Document {
+  id        String  @id @default(uuid()) @db.Uuid
+  dossierId String  @db.Uuid
+  dossier   Dossier @relation(fields: [dossierId], references: [id])
+
+  name         String
+  fileUrl      String
+  note         String?
+  clientVisible Boolean @default(true)
+  uploadedById String? @db.Uuid
+  uploadedBy   User?   @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([dossierId], name: "idx_documents_dossier_id")
+}
+
+model Message {
+  id        String   @id @default(uuid()) @db.Uuid
+  senderId   String   @db.Uuid
+  receiverId String   @db.Uuid
+  dossierId  String?  @db.Uuid
+
+  sender   User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  dossier  Dossier? @relation(fields: [dossierId], references: [id])
+
+  content  String
+  readAt   DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([senderId], name: "idx_messages_sender")
+  @@index([receiverId], name: "idx_messages_receiver")
+}
+
+model StatusHistory {
+  id        String  @id @default(uuid()) @db.Uuid
+  dossierId String  @db.Uuid
+  dossier   Dossier @relation(fields: [dossierId], references: [id])
+
+  status      DossierStatus
+  note        String?
+  changedById String?       @db.Uuid
+  changedBy   User?         @relation("UserStatusHistories", fields: [changedById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([dossierId], name: "idx_status_history_dossier_id")
+}
+
+model Note {
+  id        String  @id @default(uuid()) @db.Uuid
+  dossierId String  @db.Uuid
+  dossier   Dossier @relation(fields: [dossierId], references: [id])
+
+  userId String? @db.Uuid
+  user   User?   @relation(fields: [userId], references: [id])
+
+  content   String?
+  createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(uuid()) @db.Uuid
+  dossierId String   @db.Uuid
+  dossier   Dossier  @relation(fields: [dossierId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([dossierId], name: "idx_favorites_dossier_id")
+}
+
+model Payment {
+  id        String        @id @default(uuid()) @db.Uuid
+  dossierId String        @db.Uuid
+  dossier   Dossier       @relation(fields: [dossierId], references: [id])
+  amount    Float
+  paidAmount Float        @default(0)
+  status    PaymentStatus @default(UNPAID)
+  method    String?       @db.VarChar(50)
+  dueDate   DateTime?
+  paidAt    DateTime?
+  receiptUrl String?
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([dossierId], name: "idx_payments_dossier_id")
+}
+
+model Contract {
+  id        String   @id @default(uuid()) @db.Uuid
+  dossierId String   @db.Uuid
+  dossier   Dossier  @relation(fields: [dossierId], references: [id])
+  title     String
+  content   String
+  type      String?  @db.VarChar(100)
+  parties   Json?
+  generatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dossierId], name: "idx_contracts_dossier_id")
+}
+
+model Invitation {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String
+  name      String?
+  token     String   @unique
+  dossierId String?  @db.Uuid
+  dossier   Dossier? @relation(fields: [dossierId], references: [id])
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([dossierId], name: "idx_invitation_dossier_id")
+}
