@@ -1,13 +1,11 @@
-export function tndYearsOptions() {
+export function tndYearsOptions(count: number = 4) {
   const currentYear = new Date().getFullYear();
 
-  const tndYearsOptions = [
-    { value: (currentYear - 4).toString(), label: (currentYear - 4).toString() },
-    { value: (currentYear - 3).toString(), label: (currentYear - 3).toString() },
-    { value: (currentYear - 2).toString(), label: (currentYear - 2).toString() },
-    { value: (currentYear - 1).toString(), label: (currentYear - 1).toString() },
-    { value: currentYear.toString(), label: currentYear.toString() },
-  ];
+  const tndYearsOptions = [];
+  for (let i = count; i >= 0; i--) {
+    const y = currentYear - i;
+    tndYearsOptions.push({ value: y.toString(), label: y.toString() });
+  }
 
   return tndYearsOptions;
 }

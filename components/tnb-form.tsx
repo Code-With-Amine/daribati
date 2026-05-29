@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import type React from "react"
 import { MultiSelect, type Option } from "./multi-select"
 import { cn } from "@/lib/utils"
-import {tndYearsOptions} from "@/lib/years";
+import { tndYearsOptions } from "@/lib/years"
+import { getDefaultTariffConfig, getTariffForYear, breakdownForYear } from "@/lib/tnb-utils"
+import type { TariffConfig } from "@/lib/tnb-utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -18,8 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Settings, Plus, ChevronDown, ChevronUp } from "lucide-react"
 
-import { calculateAmountForYear, breakdownForYear } from "@/lib/tnb-utils" // utility functions
 import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 
@@ -28,6 +30,7 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
   const [etage, setEtage] = useState<string | null>(null)
   const [zone, setZone] = useState<string | null>(null)
   const [selectedTndYears, setSelectedTndYears] = useState<string[]>([])
+  const [customYear, setCustomYear] = useState("")
   const [selectedDeclaredTnbYears, setSelectedDeclaredTnbYears] = useState<string[]>([])
   const [totalYears, setTotalYears] = useState<number>(0)
   const [results, setResults] = useState<Array<{
@@ -39,6 +42,35 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
     isDeclared: boolean
   }>>([])
 
+  // Tariff config state
+  const [showConfig, setShowConfig] = useState(false)
+  const [calcDate, setCalcDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [oldVilla, setOldVilla] = useState(6)
+  const [oldImmeuble, setOldImmeuble] = useState(10)
+  const [newVilla, setNewVilla] = useState(15)
+  const [newImmeuble, setNewImmeuble] = useState(20)
+
+  const config: TariffConfig = useMemo(() => ({
+    oldVilla,
+    oldImmeuble,
+    newVilla,
+    newImmeuble,
+    calculationDate: new Date(calcDate),
+  }), [oldVilla, oldImmeuble, newVilla, newImmeuble, calcDate])
+
+  const type = etage === "villa" ? "villa" : "immeuble"
+
+  const handleAddCustomYear = () => {
+    const y = parseInt(customYear)
+    if (isNaN(y)) return
+    const str = y.toString()
+    if (!selectedTndYears.includes(str)) {
+      setSelectedTndYears([...selectedTndYears, str])
+    }
+    setCustomYear("")
+  }
+
+  const yearOptions = useMemo(() => tndYearsOptions(6), [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,9 +81,9 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
     const computed = selectedTndYears.map((year) => {
       const y = parseInt(year)
       const isDeclared = selectedDeclaredTnbYears.includes(year)
-      const tarif = (y >= 2026 && zone === "A") ? (etage == "villa" ? 15 : 20) : (etage == "villa" ? 6 : 10)
+      const tarif = getTariffForYear(y, type, config)
       const principal = superficieValue * tarif
-      const breakdown = breakdownForYear(y, principal, isDeclared)
+      const breakdown = breakdownForYear(y, superficieValue, type, config, isDeclared)
       return { year, total: breakdown.total, principal, tarif, breakdown, isDeclared }
     })
     const total = computed.reduce((sum, item) => sum + item.total, 0)
@@ -62,7 +94,6 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
   const generatePdf = async () => {
     if (results.length === 0) return
 
-    // helper to load image from public and convert to data URL
     const loadImageAsDataUrl = async (url: string) => {
       try {
         const res = await fetch(url)
@@ -81,11 +112,9 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
 
     const doc = new jsPDF({ unit: "pt", format: "a4" })
 
-  // try to add the logo (place the logo file in /public/TNBLogo.png)
-  const imgData = await loadImageAsDataUrl("/TNBLogo.png")
+    const imgData = await loadImageAsDataUrl("/TNBLogo.png")
     if (imgData) {
       try {
-        // center the logo at the top of the page
         const pageWidth = (doc.internal?.pageSize?.getWidth && doc.internal.pageSize.getWidth()) || (doc.internal?.pageSize?.width as number) || 595
         const imgW = 80
         const imgH = 80
@@ -99,16 +128,14 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
 
     const title = "TNB - Détails du calcul et des majorations"
     doc.setFontSize(16)
-    // title under the logo
     doc.text(title, 40, 130)
 
-    // Summary
     doc.setFontSize(11)
     doc.text(`Superficie: ${superficie} m²`, 40, 100)
     doc.text(`Zone: ${zone || "-"}`, 260, 100)
     doc.text(`Type: ${etage || "-"}`, 420, 100)
+    doc.text(`Date de calcul: ${calcDate}`, 40, 115)
 
-    // Table data
     const tableBody = results.map((r) => {
       const br = r.breakdown
       return [
@@ -131,8 +158,8 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
       styles: { fontSize: 10 },
     })
 
-  const lastAutoTable = (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable
-  const finalY = lastAutoTable?.finalY || 140
+    const lastAutoTable = (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable
+    const finalY = lastAutoTable?.finalY || 140
     doc.setFontSize(12)
     doc.text("Explication des majorations:", 40, finalY + 30)
     doc.setFontSize(10)
@@ -166,6 +193,43 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="grid gap-6">
+              {/* Tariff configuration toggle */}
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowConfig(!showConfig)} className="self-end">
+                <Settings className="w-3.5 h-3.5 mr-1" />
+                Configuration des tarifs
+                {showConfig ? <ChevronUp className="w-3.5 h-3.5 ml-1" /> : <ChevronDown className="w-3.5 h-3.5 ml-1" />}
+              </Button>
+
+              {showConfig && (
+                <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+                  <div className="grid gap-2">
+                    <Label>Date de calcul</Label>
+                    <Input type="date" value={calcDate} onChange={(e) => setCalcDate(e.target.value)} />
+                    <p className="text-xs text-muted-foreground">
+                      Les années antérieures à {new Date(calcDate).getFullYear()} utiliseront l&apos;ancien tarif.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-2">
+                      <Label>Ancien tarif — Villa (DH/m²)</Label>
+                      <Input type="number" value={oldVilla} onChange={(e) => setOldVilla(parseFloat(e.target.value) || 0)} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Ancien tarif — Immeuble (DH/m²)</Label>
+                      <Input type="number" value={oldImmeuble} onChange={(e) => setOldImmeuble(parseFloat(e.target.value) || 0)} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Nouveau tarif — Villa (DH/m²)</Label>
+                      <Input type="number" value={newVilla} onChange={(e) => setNewVilla(parseFloat(e.target.value) || 0)} />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Nouveau tarif — Immeuble (DH/m²)</Label>
+                      <Input type="number" value={newImmeuble} onChange={(e) => setNewImmeuble(parseFloat(e.target.value) || 0)} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="grid gap-2">
                 <Label htmlFor="superficie">Taille du terrain en m²</Label>
                 <Input
@@ -213,17 +277,29 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
               <div className="grid gap-2">
                 <Label>Années non payées</Label>
                 <MultiSelect
-                  options={tndYearsOptions()}
+                  options={yearOptions}
                   selected={selectedTndYears}
                   onChange={setSelectedTndYears}
                   placeholder="Sélectionnez les années"
                 />
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Ajouter une année (ex: 2018)"
+                    value={customYear}
+                    onChange={(e) => setCustomYear(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomYear() } }}
+                  />
+                  <Button type="button" variant="outline" size="icon" onClick={handleAddCustomYear}>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="grid gap-2">
                 <Label>Années déclarées</Label>
                 <MultiSelect
-                  options={tndYearsOptions().map((o) => ({
+                  options={yearOptions.map((o) => ({
                     value: o.value,
                     label: `Je déclare ${o.label}`,
                   }))}
@@ -244,6 +320,9 @@ export function TnbForm({ className, ...props }: React.ComponentPropsWithoutRef<
                     {results.map((r) => (
                       <li key={r.year}>
                         <strong>{r.year}:</strong> {r.total.toFixed(2)} DH
+                        <span className="text-xs text-muted-foreground ml-2">
+                          (tarif: {r.tarif} DH/m²)
+                        </span>
                       </li>
                     ))}
                   </ul>
