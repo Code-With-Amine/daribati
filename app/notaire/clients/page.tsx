@@ -41,7 +41,7 @@ export default async function ClientsPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {clients.map((client) => (
+          {clients.map((client: any) => (
             <Card key={client.id} className="group hover:shadow-md transition-all">
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">

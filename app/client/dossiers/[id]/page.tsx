@@ -79,7 +79,7 @@ export default async function ClientDossierPage({ params }: { params: Promise<{ 
             <p className="text-gray-400 text-sm">Aucun document pour le moment</p>
           ) : (
             <div className="grid gap-3">
-              {visibleDocs.map((doc) => (
+              {visibleDocs.map((doc: any) => (
                 <div key={doc.id} className="flex items-center gap-3 p-3 rounded-lg border group">
                   <div className="w-10 h-10 bg-blue-50 rounded flex items-center justify-center text-blue-600 text-sm font-bold shrink-0">
                     {doc.name.slice(0, 2).toUpperCase()}
@@ -108,7 +108,7 @@ export default async function ClientDossierPage({ params }: { params: Promise<{ 
             <p className="text-gray-400 text-sm">Aucun suivi pour le moment</p>
           ) : (
             <div className="space-y-4">
-              {dossier.statusHistory.map((sh) => (
+              {dossier.statusHistory.map((sh: any) => (
                 <div key={sh.id} className="flex gap-3">
                   <div className="flex flex-col items-center">
                     <div className={`w-3 h-3 rounded-full ${statusColors[sh.status]?.split(' ')[0] || 'bg-gray-300'}`} />
@@ -129,7 +129,7 @@ export default async function ClientDossierPage({ params }: { params: Promise<{ 
           <div className="bg-white rounded-xl p-6 border">
             <h3 className="font-semibold text-lg mb-4">Paiements</h3>
             <div className="space-y-3">
-              {dossier.payments.map((p) => (
+              {dossier.payments.map((p: any) => (
                 <div key={p.id} className="flex justify-between items-center p-3 rounded-lg border">
                   <div>
                     <p className="text-sm font-medium">{p.amount.toLocaleString('fr-FR')} DH</p>
@@ -152,7 +152,7 @@ export default async function ClientDossierPage({ params }: { params: Promise<{ 
           <div className="bg-white rounded-xl p-6 border">
             <h3 className="font-semibold text-lg mb-4">Contrats</h3>
             <div className="space-y-3">
-              {dossier.contracts.map((c) => (
+              {dossier.contracts.map((c: any) => (
                 <div key={c.id} className="p-3 rounded-lg border">
                   <p className="text-sm font-medium">{c.title}</p>
                   <p className="text-xs text-gray-500">Généré le {new Date(c.generatedAt).toLocaleDateString('fr-FR')}</p>

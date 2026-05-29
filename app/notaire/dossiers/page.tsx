@@ -31,8 +31,8 @@ export default async function DossiersPage(props: { searchParams?: Promise<{ q?:
 
   const stats = {
     total: dossiers.length,
-    enCours: dossiers.filter((d) => d.status === 'EN_COURS').length,
-    termines: dossiers.filter((d) => d.status === 'TERMINE').length,
+    enCours: dossiers.filter((d: any) => d.status === 'EN_COURS').length,
+    termines: dossiers.filter((d: any) => d.status === 'TERMINE').length,
   }
 
   return (
@@ -90,7 +90,7 @@ export default async function DossiersPage(props: { searchParams?: Promise<{ q?:
               </TableRow>
             </TableHeader>
             <TableBody>
-              {dossiers.map((d) => (
+              {dossiers.map((d: any) => (
                 <TableRow key={d.id} className="hover:bg-muted/50">
                   <TableCell className="font-mono text-sm font-medium">{d.dossierNumber}</TableCell>
                   <TableCell className="font-medium">{d.title || '—'}</TableCell>

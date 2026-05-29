@@ -133,7 +133,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
                 <p className="text-muted-foreground text-sm">Aucun historique</p>
               ) : (
                 <div className="space-y-3">
-                  {dossier.statusHistory.map((sh, idx) => (
+                  {dossier.statusHistory.map((sh: any, idx: number) => (
                     <div key={sh.id} className="flex gap-3 text-sm">
                       <div className="flex flex-col items-center">
                         <div className={`w-2.5 h-2.5 rounded-full mt-1.5 ${idx === 0 ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
@@ -161,7 +161,7 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
               <DossierNoteForm dossierId={dossier.id} />
               {dossier.notes.length > 0 ? (
                 <div className="space-y-2">
-                  {dossier.notes.map((note) => (
+                  {dossier.notes.map((note: any) => (
                     <div key={note.id} className="p-3 bg-muted rounded-lg text-sm">
                       <p>{note.content}</p>
                       <p className="text-xs text-muted-foreground mt-1">{new Date(note.createdAt).toLocaleString('fr-FR')}</p>

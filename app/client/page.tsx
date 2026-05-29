@@ -65,7 +65,7 @@ export default async function ClientDashboardPage() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {dossiers.map((dossier) => {
+          {dossiers.map((dossier: any) => {
             const lastStatus = dossier.statusHistory[0]
             return (
               <Link key={dossier.id} href={`/client/dossiers/${dossier.id}`} className="group">
