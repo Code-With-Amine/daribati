@@ -1,76 +1,180 @@
 import { prisma } from '@/lib/db'
-import { AppSidebar } from '@/components/app-sidebar'
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { Button } from '@/components/ui/button'
 import DossierViewer from '@/components/DossierViewer'
+import DossierPayments from '@/components/DossierPayments'
+import DossierContract from '@/components/DossierContract'
+import DossierStatusBadge from '@/components/DossierStatusBadge'
+import DossierStatusStepperWrapper from '@/components/DossierStatusStepperWrapper'
+import DossierNoteForm from '@/components/DossierNoteForm'
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ArrowLeft, Edit, Mail, Phone, User, Clock, Download } from 'lucide-react'
 
-async function getDossier(idOrRef?: string) {
-  if (!idOrRef) return null
-
-  // simple UUID v4-ish check
+async function getDossier(idOrRef: string) {
   const isUuid = /^[0-9a-fA-F-]{36}$/.test(idOrRef)
-
-  if (isUuid) {
-    return prisma.dossier.findUnique({ where: { id: idOrRef }, include: { documents: true, client: true, statusHistory: true } })
+  const include = {
+    documents: { orderBy: { createdAt: 'desc' as const } },
+    client: { select: { id: true, name: true, email: true, phone: true, cin: true } },
+    statusHistory: { orderBy: { createdAt: 'desc' as const } },
+    payments: { orderBy: { createdAt: 'desc' as const } },
+    contracts: { orderBy: { generatedAt: 'desc' as const } },
+    notes: { orderBy: { createdAt: 'desc' as const } },
+    createdBy: { select: { name: true } },
   }
-
-  // fallback: try to find by dossierNumber
-  return prisma.dossier.findFirst({ where: { dossierNumber: idOrRef }, include: { documents: true, client: true, statusHistory: true } })
+  if (isUuid) return prisma.dossier.findUnique({ where: { id: idOrRef }, include })
+  return prisma.dossier.findFirst({ where: { dossierNumber: idOrRef }, include })
 }
 
-export default async function DossierPage({ params }: { params: Promise<{ id?: string }> | { id?: string } }) {
-  // Next can pass params as a Promise; await if needed
-  const resolved = (params && typeof (params as any).then === 'function') ? await (params as any) : params
-  const id = resolved?.id
-  console.log('[DossierPage] params.id =', id)
+const statusLabels: Record<string, string> = {
+  EN_COURS: 'En cours',
+  DOCUMENTS_MANQUANTS: 'Documents manquants',
+  CHEZ_COMMUNE: 'Chez commune',
+  CHEZ_CONSERVATION: 'Chez conservation',
+  VALIDATION_BANCAIRE: 'Validation bancaire',
+  EN_ATTENTE_SIGNATURE: 'En attente signature',
+  TERMINE: 'Terminé',
+}
 
-  if (!id) {
-    console.warn('[DossierPage] No id provided in params')
-    return <div className="p-6">Dossier introuvable (identifiant manquant)</div>
-  }
+export default async function DossierPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const dossier = await getDossier(id)
+  if (!dossier) notFound()
 
-  try {
-    const dossier = await getDossier(id)
-    console.log('[DossierPage] dossier found?', !!dossier)
+  return (
+    <div className="flex-1 space-y-6 p-6">
+      <Link href="/notaire/dossiers" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <ArrowLeft className="w-4 h-4" /> Retour aux dossiers
+      </Link>
 
-    if (!dossier) {
-      return (
-        <div className="p-6">
-          <h2 className="text-lg font-semibold">Dossier introuvable</h2>
-          <p className="text-sm text-slate-500 mt-2">Aucun dossier trouvé pour l'identifiant: <code className="bg-slate-100 px-2 rounded">{id}</code></p>
-        </div>
-      )
-    }
-
-    return (
-      <div className="w-full h-full bg-white p-6 rounded-2xl shadow flex flex-col">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{dossier.title || dossier.dossierNumber}</h1>
-            <p className="text-sm text-slate-500">Client: {dossier.client?.name || '—'}</p>
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight">{dossier.title || dossier.dossierNumber}</h1>
+            <DossierStatusBadge status={dossier.status} />
           </div>
-          <div>
-            <a href="#upload" className="text-sm text-slate-600">Ajouter un document</a>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <span>Réf: <span className="font-mono font-medium text-foreground">{dossier.dossierNumber}</span></span>
+            {dossier.landRef && <span>Réf. foncière: <span className="font-medium text-foreground">{dossier.landRef}</span></span>}
+            <span>Créé par {dossier.createdBy?.name || '—'} le {new Date(dossier.createdAt).toLocaleDateString('fr-FR')}</span>
           </div>
         </div>
-
-        <section className="mt-6 flex-1 overflow-auto">
-          <DossierViewer dossierId={dossier.id} initialDocs={dossier.documents ?? []} client={dossier.client} />
-        </section>
-
-        <section id="upload" className="mt-6">
-          <h3 className="font-semibold mb-2">Ajouter un document (URL)</h3>
-          <form action={`/api/documents`} method="post" className="flex gap-2">
-            <input type="hidden" name="dossierId" value={dossier.id} />
-            <input name="name" placeholder="Document name" className="px-3 py-2 border rounded w-1/3" />
-            <input name="fileUrl" placeholder="https://..." className="px-3 py-2 border rounded flex-1" />
-            <button className="px-4 py-2 rounded bg-[#262EE3] text-white">Upload</button>
-          </form>
-        </section>
+        <Link href={`/notaire/dossiers/${dossier.id}/edit`}>
+          <Button variant="outline" size="sm"><Edit className="w-4 h-4 mr-1" /> Modifier</Button>
+        </Link>
       </div>
-    )
-  } catch (err) {
-    console.error('[DossierPage] error', err)
-    return <div className="p-6">Erreur lors du chargement du dossier.</div>
-  }
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Avancement du dossier</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DossierStatusStepperWrapper dossierId={dossier.id} currentStatus={dossier.status} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <User className="w-6 h-6 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-semibold text-lg">{dossier.client?.name || '—'}</p>
+              {dossier.client?.cin && <p className="text-sm text-muted-foreground">CIN: {dossier.client.cin}</p>}
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1"><Mail className="w-3.5 h-3.5" /> {dossier.client?.email || '—'}</span>
+                <span className="inline-flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> {dossier.client?.phone || '—'}</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Documents ({dossier.documents.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DossierViewer dossierId={dossier.id} initialDocs={dossier.documents ?? []} client={dossier.client} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Paiements</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DossierPayments dossierId={dossier.id} initialPayments={dossier.payments ?? []} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Contrats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DossierContract dossierId={dossier.id} initialContracts={dossier.contracts ?? []} client={dossier.client} />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="w-4 h-4" /> Historique des statuts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {dossier.statusHistory.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Aucun historique</p>
+              ) : (
+                <div className="space-y-3">
+                  {dossier.statusHistory.map((sh, idx) => (
+                    <div key={sh.id} className="flex gap-3 text-sm">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-2.5 h-2.5 rounded-full mt-1.5 ${idx === 0 ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                        {idx < dossier.statusHistory.length - 1 && <div className="w-px flex-1 bg-border" />}
+                      </div>
+                      <div className="pb-3">
+                        <p className={`font-medium ${idx === 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {statusLabels[sh.status] || sh.status}
+                        </p>
+                        {sh.note && <p className="text-muted-foreground">{sh.note}</p>}
+                        <p className="text-xs text-muted-foreground/60 mt-0.5">{new Date(sh.createdAt).toLocaleString('fr-FR')}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Notes internes</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <DossierNoteForm dossierId={dossier.id} />
+              {dossier.notes.length > 0 ? (
+                <div className="space-y-2">
+                  {dossier.notes.map((note) => (
+                    <div key={note.id} className="p-3 bg-muted rounded-lg text-sm">
+                      <p>{note.content}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{new Date(note.createdAt).toLocaleString('fr-FR')}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">Aucune note pour le moment</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
 }

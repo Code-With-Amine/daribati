@@ -14,9 +14,18 @@ enum Role {
 
 enum DossierStatus {
   EN_COURS
+  DOCUMENTS_MANQUANTS
   CHEZ_COMMUNE
   CHEZ_CONSERVATION
+  VALIDATION_BANCAIRE
+  EN_ATTENTE_SIGNATURE
   TERMINE
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
 }
 
 model User {
@@ -41,6 +50,8 @@ model User {
   documents       Document[]      @relation("UploadedDocuments")
   statusHistory   StatusHistory[] @relation("UserStatusHistories")
   notes           Note[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model Dossier {
@@ -63,8 +74,11 @@ model Dossier {
   documents     Document[]
   statusHistory StatusHistory[]
   notes         Note[]
+  payments      Payment[]
+  contracts     Contract[]
   invitations   Invitation[]
   Favorite      Favorite[]
+  messages      Message[]
 
   @@index([clientId], name: "idx_dossiers_client_id")
 }
@@ -76,12 +90,32 @@ model Document {
 
   name         String
   fileUrl      String
+  note         String?
+  clientVisible Boolean @default(true)
   uploadedById String? @db.Uuid
   uploadedBy   User?   @relation("UploadedDocuments", fields: [uploadedById], references: [id])
 
   createdAt DateTime @default(now())
 
   @@index([dossierId], name: "idx_documents_dossier_id")
+}
+
+model Message {
+  id        String   @id @default(uuid()) @db.Uuid
+  senderId   String   @db.Uuid
+  receiverId String   @db.Uuid
+  dossierId  String?  @db.Uuid
+
+  sender   User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  dossier  Dossier? @relation(fields: [dossierId], references: [id])
+
+  content  String
+  readAt   DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([senderId], name: "idx_messages_sender")
+  @@index([receiverId], name: "idx_messages_receiver")
 }
 
 model StatusHistory {
@@ -118,6 +152,38 @@ model Favorite {
   createdAt DateTime @default(now())
 
   @@index([dossierId], name: "idx_favorites_dossier_id")
+}
+
+model Payment {
+  id        String        @id @default(uuid()) @db.Uuid
+  dossierId String        @db.Uuid
+  dossier   Dossier       @relation(fields: [dossierId], references: [id])
+  amount    Float
+  paidAmount Float        @default(0)
+  status    PaymentStatus @default(UNPAID)
+  method    String?       @db.VarChar(50)
+  dueDate   DateTime?
+  paidAt    DateTime?
+  receiptUrl String?
+  notes     String?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([dossierId], name: "idx_payments_dossier_id")
+}
+
+model Contract {
+  id        String   @id @default(uuid()) @db.Uuid
+  dossierId String   @db.Uuid
+  dossier   Dossier  @relation(fields: [dossierId], references: [id])
+  title     String
+  content   String
+  type      String?  @db.VarChar(100)
+  parties   Json?
+  generatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dossierId], name: "idx_contracts_dossier_id")
 }
 
 model Invitation {

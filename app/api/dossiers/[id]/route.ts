@@ -1,36 +1,33 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { verifyToken } from '@/lib/auth'
+import { verifyAuth } from '@/app/api/auth/middleware'
 
-export async function DELETE(req: Request, context: any) {
-  const { params } = context || {}
-  const { id } = params || {}
-  // auth: ensure user is NOTAIRE
-  const auth = req.headers.get('authorization') || ''
-  const token = auth.replace('Bearer ', '')
-  const payload: any = verifyToken(token)
-  if (!payload) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-  const user = await prisma.user.findUnique({ where: { id: payload.userId } })
-  if (!user || user.role !== 'NOTAIRE') return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+async function requireNotaire(req: Request) {
+  const user = await verifyAuth(req)
+  if (!user) return null
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
+  if (!dbUser || dbUser.role !== 'NOTAIRE') return null
+  return dbUser
+}
+
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await requireNotaire(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
   try {
     await prisma.dossier.delete({ where: { id } })
     return NextResponse.json({ ok: true })
   } catch (err) {
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }
 
-export async function PUT(req: Request, context: any) {
-  const { params } = context || {}
-  const { id } = params || {}
-  // auth: ensure user is NOTAIRE
-  const auth = req.headers.get('authorization') || ''
-  const token = auth.replace('Bearer ', '')
-  const payload: any = verifyToken(token)
-  if (!payload) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
-  const user = await prisma.user.findUnique({ where: { id: payload.userId } })
-  if (!user || user.role !== 'NOTAIRE') return NextResponse.json({ ok: false, error: 'Forbidden' }, { status: 403 })
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await requireNotaire(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { id } = await params
   try {
     const body = await req.json()
     const { title, dossierNumber, clientId, landRef, status } = body
@@ -42,10 +39,25 @@ export async function PUT(req: Request, context: any) {
     if (landRef !== undefined) data.landRef = landRef
     if (status !== undefined) data.status = status
 
-    const updated = await prisma.dossier.update({ where: { id }, data, include: { client: true, documents: true, statusHistory: true } })
+    if (status !== undefined) {
+      await prisma.statusHistory.create({
+        data: {
+          dossierId: id,
+          status,
+          note: 'Statut mis à jour',
+          changedById: user.id,
+        },
+      })
+    }
+
+    const updated = await prisma.dossier.update({
+      where: { id },
+      data,
+      include: { client: true, documents: true, statusHistory: { orderBy: { createdAt: 'desc' } } },
+    })
 
     return NextResponse.json({ ok: true, dossier: updated })
   } catch (err) {
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 })
+    return NextResponse.json({ error: String(err) }, { status: 500 })
   }
 }

@@ -1,7 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
+import { SignJWT } from 'jose'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'secret'
+
+function getExpiry() {
+  const d = new Date()
+  d.setDate(d.getDate() + 7)
+  return d
+}
 
 export async function POST(req: Request) {
   try {
@@ -14,9 +22,26 @@ export async function POST(req: Request) {
     const ok = await bcrypt.compare(password, user.password)
     if (!ok) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' })
+    const token = await new SignJWT({ sub: user.id, role: user.role, name: user.name, email: user.email })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('7d')
+      .setIssuedAt()
+      .sign(new TextEncoder().encode(JWT_SECRET))
 
-    return NextResponse.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, phone: user.phone } })
+    const response = NextResponse.json({
+      token,
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, phone: user.phone }
+    })
+
+    response.cookies.set('session', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: getExpiry(),
+      path: '/',
+    })
+
+    return response
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 })
   }

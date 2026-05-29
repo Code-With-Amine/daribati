@@ -1,33 +1,39 @@
 import React from 'react'
 import { prisma } from '@/lib/db'
 import DossierEditForm from '@/components/DossierEditForm'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 
-// Server component to fetch initial data
 async function getData(id: string) {
   const dossier = await prisma.dossier.findUnique({ where: { id }, include: { client: true } })
   const clients = await prisma.user.findMany({ where: { role: 'CLIENT' } })
   return { dossier, clients }
 }
 
-export default async function EditDossierPage({ params }: { params: Promise<{ id?: string }> | { id?: string } }) {
-  // Next may pass params as a Promise; resolve if needed
-  const resolved = (params && typeof (params as any).then === 'function') ? await (params as any) : params
-  const id = resolved?.id
-
-  if (!id) {
-    return <div className="p-6">Identifiant du dossier manquant</div>
-  }
+export default async function EditDossierPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  if (!id) return <div className="p-6">Identifiant du dossier manquant</div>
 
   const { dossier, clients } = await getData(id)
-
   if (!dossier) return <div className="p-6">Dossier introuvable</div>
 
-  // Render client-side form component for nicer UI/validation
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Modifier le dossier</h1>
-      {/* Hydrate client form component */}
-      <DossierEditForm initialDossier={dossier} clients={clients} />
+    <div className="flex-1 space-y-6 p-6">
+      <Link href={`/notaire/dossiers/${id}`} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <ArrowLeft className="w-4 h-4" /> Retour au dossier
+      </Link>
+
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Modifier le dossier</h1>
+        <p className="text-sm text-muted-foreground">{dossier.dossierNumber} — {dossier.title || 'Sans titre'}</p>
+      </div>
+
+      <Card>
+        <CardContent className="p-6">
+          <DossierEditForm initialDossier={dossier} clients={clients} />
+        </CardContent>
+      </Card>
     </div>
   )
 }

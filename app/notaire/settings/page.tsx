@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/app-sidebar'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Settings } from 'lucide-react'
 import NotaireSettings from '../../../components/NotaireSettings'
 
 async function getNotaire() {
@@ -10,13 +12,18 @@ async function getNotaire() {
 export default async function SettingsPage() {
   const notaire = await getNotaire()
   return (
-    <main className="flex-1 p-6 h-screen">
-      <div className="w-full h-full">
-        <h1 className="text-2xl font-bold mb-4">Paramètres du notaire</h1>
-        <div className="bg-white rounded-2xl shadow p-6 w-full h-full">
-          <NotaireSettings initialNotaire={notaire} />
-        </div>
+    <div className="flex-1 space-y-6 p-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <Settings className="w-6 h-6" /> Paramètres
+        </h1>
+        <p className="text-sm text-muted-foreground">Gérez les informations de votre compte notaire</p>
       </div>
-    </main>
+      <Card>
+        <CardContent className="p-6">
+          <NotaireSettings initialNotaire={notaire} />
+        </CardContent>
+      </Card>
+    </div>
   )
 }

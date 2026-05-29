@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TNB Tax Calculator | Estimate Your Unpaid Taxes Instantly",
-  description: "Easily calculate unpaid TNB (Taxe sur les terrains non bâtis) taxes for multiple years. Free, accurate, and optimized for property owners and developers in Morocco.",
+  title: "NotaireFlow | Gestion de dossiers notariaux",
+  description: "Plateforme de gestion numérique pour notaires. Gérez vos dossiers, clients, documents et paiements en un seul endroit.",
 };
 
 

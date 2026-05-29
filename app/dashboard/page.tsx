@@ -25,7 +25,7 @@ export default function Page() {
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <SectionCards />
               <div className="px-4 lg:px-6">
-                <ChartAreaInteractive />
+                <ChartAreaInteractive data={[]} />
               </div>
               {/* map incoming sample data to the DataTable schema: { id, ref, client, date, status } */}
               <DataTable data={rawData.map((it: any) => ({ id: it.id, ref: it.header, client: it.reviewer || '—', date: it.target || '-', status: it.status }))} />

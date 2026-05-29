@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { verifyAuth } from '@/app/api/auth/middleware'
 import fs from 'fs'
 import path from 'path'
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
@@ -23,18 +24,19 @@ async function uploadToS3(fileBuffer: Buffer, filename: string) {
   return url
 }
 
-export async function DELETE(req: Request, { params }: any) {
-  const { id } = params
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await verifyAuth(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
   try {
     const doc = await prisma.document.findUnique({ where: { id } })
     if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
 
-    // For S3 removal we could parse URL to get key; for local just unlink file
     if (doc.fileUrl.startsWith('/uploads/')) {
       const fp = path.join(process.cwd(), 'public', doc.fileUrl)
       try { fs.unlinkSync(fp) } catch (e) { /* ignore */ }
     } else if (process.env.AWS_S3_BUCKET) {
-      // naive key extraction
       try {
         const url = new URL(doc.fileUrl)
         const key = url.pathname.slice(1)
@@ -46,43 +48,35 @@ export async function DELETE(req: Request, { params }: any) {
     await prisma.document.delete({ where: { id } })
     return NextResponse.json({ ok: true, message: 'Document supprimé' })
   } catch (err: any) {
-    // Log full error for server-side debugging, but return a user-friendly message to clients in French
-    console.error('Error in /api/documents/[id] route:', err)
-    return NextResponse.json({ error: 'Une erreur est survenue lors du traitement du document. Veuillez réessayer plus tard.' }, { status: 500 })
+    console.error('Error deleting document:', err)
+    return NextResponse.json({ error: 'Erreur lors de la suppression du document' }, { status: 500 })
   }
 }
 
-export async function PUT(req: Request, { params }: any) {
-  const { id } = params
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await verifyAuth(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
   if (!id) {
     return NextResponse.json({ error: "Identifiant du document manquant" }, { status: 400 })
   }
+
   try {
     const contentType = req.headers.get('content-type') || ''
-    // Debug logging to help diagnose 500 errors during document update
-    try {
-      console.info('PUT /api/documents/[id] request', { id, contentType })
-      // Log some headers but avoid printing Authorization token
-      const headersObj: Record<string,string> = {}
-      for (const [k,v] of req.headers) {
-        if (k.toLowerCase() === 'authorization') { headersObj[k] = '[REDACTED]' } else headersObj[k] = v
-      }
-      console.info('Request headers:', headersObj)
-    } catch (e) {
-      console.error('Failed to log request meta', e)
-    }
     let name: string | undefined
     let fileUrl: string | undefined
+    let note: string | undefined
+    let clientVisible: boolean | undefined
 
     if (contentType.includes('multipart/form-data')) {
       const form = await req.formData()
       name = form.get('name') as string
+      note = form.get('note') as string
+      const cv = form.get('clientVisible')
+      if (cv !== null) clientVisible = cv === 'true'
       const file = form.get('file') as unknown as File
-      try {
-        console.info('Form fields:', { hasName: !!name, hasFile: !!file })
-        if (file && (file as any).name) console.info('Uploaded file name:', (file as any).name)
-      } catch (e) { console.error('Error logging form data', e) }
-      if (file) {
+      if (file && file.size > 0) {
         const arrayBuffer = await file.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
         const filename = `${Date.now()}-${file.name}`
@@ -93,11 +87,15 @@ export async function PUT(req: Request, { params }: any) {
       const body = await req.json()
       name = body.name
       fileUrl = body.fileUrl
+      note = body.note
+      clientVisible = body.clientVisible
     }
 
     const data: any = {}
     if (name) data.name = name
     if (fileUrl) data.fileUrl = fileUrl
+    if (note !== undefined) data.note = note
+    if (clientVisible !== undefined) data.clientVisible = clientVisible
     if (Object.keys(data).length === 0) {
       return NextResponse.json({ error: 'Aucune modification fournie' }, { status: 400 })
     }
@@ -105,8 +103,7 @@ export async function PUT(req: Request, { params }: any) {
     const updated = await prisma.document.update({ where: { id }, data })
     return NextResponse.json({ doc: updated })
   } catch (err: any) {
-    // Log full error for server-side debugging, but return a user-friendly message to clients in French
-    console.error('Error in /api/documents/[id] route:', err)
-    return NextResponse.json({ error: 'Une erreur est survenue lors du traitement du document. Veuillez réessayer plus tard.' }, { status: 500 })
+    console.error('Error updating document:', err)
+    return NextResponse.json({ error: 'Erreur lors de la mise à jour du document' }, { status: 500 })
   }
 }

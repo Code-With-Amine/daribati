@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     const notaireId = url.searchParams.get('notaireId')
     const where: any = { role: 'CLIENT' }
     if (notaireId) where.notaireId = notaireId
-    const clients = await prisma.user.findMany({ where, select: { id: true, name: true, email: true, phone: true } })
+    const clients = await prisma.user.findMany({ where, select: { id: true, name: true, email: true, phone: true, cin: true, avatar: true } })
     return NextResponse.json({ clients })
   } catch (err: any) {
     console.error('GET /api/clients error:', err)
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     const tempPassword = password || genPassword(10)
     const hashed = await bcrypt.hash(tempPassword, 10)
-  const { phone, notaireId, cin } = body
+  const { phone, notaireId, cin, avatar } = body
 
     // Build data using accepted Prisma fields; notaireId can be null
   const data: any = {
@@ -43,6 +43,7 @@ export async function POST(req: Request) {
   }
   if (phone) data.phone = phone
   if (cin) data.cin = cin
+  if (avatar) data.avatar = avatar
   data.notaireId = notaireId || null
 
   const client = await prisma.user.create({ data })
