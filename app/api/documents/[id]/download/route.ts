@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyAuth } from '@/app/api/auth/middleware'
-import fs from 'fs'
-import path from 'path'
 
 export const runtime = 'nodejs'
 
@@ -29,46 +27,32 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       }
     }
 
-    let filePath: string
-    let fileName: string
+    const fileUrl = doc.fileUrl
 
-    if (doc.fileUrl.startsWith('/uploads/')) {
-      filePath = path.join(process.cwd(), 'public', doc.fileUrl)
-      if (!fs.existsSync(filePath)) {
-        return NextResponse.json({ error: 'Fichier introuvable' }, { status: 404 })
-      }
-      fileName = doc.name || path.basename(doc.fileUrl)
-    } else if (doc.fileUrl.startsWith('http')) {
-      // External URL — redirect
-      return NextResponse.redirect(doc.fileUrl)
-    } else {
-      return NextResponse.json({ error: 'Type de fichier non supporté' }, { status: 400 })
+    // External URL — redirect
+    if (fileUrl.startsWith('http') && !fileUrl.startsWith('data:')) {
+      return NextResponse.redirect(fileUrl)
     }
 
-    const buffer = fs.readFileSync(filePath)
-    const ext = path.extname(fileName).toLowerCase()
-    const mimeMap: Record<string, string> = {
-      '.pdf': 'application/pdf',
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.doc': 'application/msword',
-      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      '.xls': 'application/vnd.ms-excel',
-      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      '.txt': 'text/plain',
-      '.zip': 'application/zip',
-    }
-    const contentType = mimeMap[ext] || 'application/octet-stream'
+    // Base64 data URI — decode and serve
+    if (fileUrl.startsWith('data:')) {
+      const match = fileUrl.match(/^data:([^;]+);base64,(.+)$/)
+      if (!match) return NextResponse.json({ error: 'Format de fichier invalide' }, { status: 400 })
+      const contentType = match[1]
+      const base64 = match[2]
+      const buffer = Buffer.from(base64, 'base64')
+      const fileName = doc.name || 'document'
 
-    return new NextResponse(buffer, {
-      headers: {
-        'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${fileName}"`,
-        'Content-Length': String(buffer.length),
-      },
-    })
+      return new NextResponse(buffer, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${fileName}"`,
+          'Content-Length': String(buffer.length),
+        },
+      })
+    }
+
+    return NextResponse.json({ error: 'Type de fichier non supporté' }, { status: 400 })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

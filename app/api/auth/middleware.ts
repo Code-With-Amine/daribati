@@ -75,6 +75,9 @@ export async function requireNotaire(req?: Request) {
   if (!dbUser || dbUser.role !== 'NOTAIRE') {
     return { error: 'Forbidden', status: 403 };
   }
+  if (dbUser.disabled) {
+    return { error: 'Account disabled', status: 403 };
+  }
   return { user: dbUser };
 }
 
@@ -85,6 +88,21 @@ export async function requireClient(req?: Request) {
   }
   const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
   if (!dbUser || dbUser.role !== 'CLIENT') {
+    return { error: 'Forbidden', status: 403 };
+  }
+  if (dbUser.disabled) {
+    return { error: 'Account disabled', status: 403 };
+  }
+  return { user: dbUser };
+}
+
+export async function requireOwner(req?: Request) {
+  const user = await verifyAuth(req);
+  if (!user) {
+    return { error: 'Unauthorized', status: 401 };
+  }
+  const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!dbUser || dbUser.role !== 'OWNER') {
     return { error: 'Forbidden', status: 403 };
   }
   return { user: dbUser };

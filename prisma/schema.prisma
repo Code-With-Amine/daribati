@@ -8,6 +8,7 @@ datasource db {
 }
 
 enum Role {
+  OWNER
   NOTAIRE
   CLIENT
 }
@@ -35,8 +36,9 @@ model User {
   password  String
   role      Role
   phone     String?  @db.VarChar(20)
-  avatar    String?  @db.VarChar(255)
+  avatar    String?  @db.Text
   cin       String?  @db.VarChar(50)
+  disabled  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

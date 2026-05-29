@@ -14,6 +14,7 @@ import {
   IconCalculator,
   IconBuilding,
   IconMessage,
+  IconHome,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -22,6 +23,7 @@ import { NavCalculators } from "@/components/nav-calculators"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { ModeToggle } from '@/components/ui/toggole-mode'
 import {
   Sidebar,
   SidebarContent,
@@ -39,6 +41,7 @@ const data = {
     { title: "Clients", url: "/notaire/clients", icon: <IconUsers className="w-5 h-5" /> },
     { title: "Statistiques", url: "/notaire/dashboard", icon: <IconChartBar className="w-5 h-5" /> },
     { title: "Messages", url: "/notaire/messages", icon: <IconMessage className="w-5 h-5" /> },
+    { title: "Site public", url: "/", icon: <IconHome className="w-5 h-5" /> },
   ],
   calculators: [
     { title: "Terrain Exonéré", url: "/notaire/terrainExo", icon: <IconCalculator className="w-5 h-5" /> },
@@ -64,6 +67,12 @@ export function AppSidebar({ user, navMain, documents, navSecondary, calculators
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
+        <div className="flex items-center justify-between px-3 pt-1 pb-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold tracking-widest text-sidebar-foreground/40 uppercase">NotaireFlow</span>
+          </div>
+          <ModeToggle />
+        </div>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">

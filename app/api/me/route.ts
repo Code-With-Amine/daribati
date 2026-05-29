@@ -36,3 +36,29 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+
+export async function PUT(req: Request) {
+  const user = await verifyAuth(req)
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const body = await req.json()
+    const { name, email, phone, avatar } = body
+
+    const data: any = {}
+    if (name !== undefined) data.name = name
+    if (email !== undefined) data.email = email
+    if (phone !== undefined) data.phone = phone
+    if (avatar !== undefined) data.avatar = avatar
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data,
+      select: { id: true, name: true, email: true, role: true, avatar: true, cin: true, phone: true },
+    })
+
+    return NextResponse.json({ user: updated })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
