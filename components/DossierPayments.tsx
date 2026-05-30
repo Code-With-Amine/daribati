@@ -84,11 +84,11 @@ export default function DossierPayments({ dossierId, initialPayments }: { dossie
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      const blob = new Blob([data.receipt.content], { type: "text/plain" })
+      const blob = new Blob([data.receipt.content], { type: "text/html" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `recu-${data.receipt.number}.txt`
+      a.download = `recu-${data.receipt.number}.html`
       a.click()
       URL.revokeObjectURL(url)
       toast.success("Reçu téléchargé")

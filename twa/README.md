@@ -1,4 +1,4 @@
-Trusted Web Activity (TWA) setup for Daribati
+Trusted Web Activity (TWA) setup for NotaireFlow
 
 What these files do
 - `public/.well-known/assetlinks.json` — the Digital Asset Links file that must be served from your HTTPS site at `https://<your-domain>/.well-known/assetlinks.json`. Replace placeholders with your Android package name and SHA-256 fingerprint.
@@ -28,7 +28,7 @@ Create `assetlinks.json` entry example
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.example.daribati",
+      "package_name": "com.notaireflow.app",
       "sha256_cert_fingerprints": [
         "A1B2C3D4E5F6...REPLACE_WITH_REAL_SHA256"
       ]

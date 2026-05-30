@@ -19,9 +19,9 @@
   "display": "standalone",
   "dir": "auto",
   "lang": "en-GB",
-  "name": "Daribati",
-  "short_name": "tnb",
+  "name": "NotaireFlow",
+  "short_name": "NotaireFlow",
   "start_url": "/",
   "scope": "/",
-  "description": "Daribati est une application intuitive et moderne conçue pour simplifier le calcul de la taxe sur les terrains non bâtis. Elle permet aux utilisateurs de simuler rapidement le montant à payer selon la superficie de leur terrain, le nombre d'étages construits, et leur situation de déclaration pour les années récentes"
+  "description": "NotaireFlow est une plateforme numérique complète pour la gestion d'étude notariale : dossiers, contrats, paiements, et communication client."
 }

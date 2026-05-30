@@ -95,9 +95,9 @@ export default function LandingPage() {
   ]
 
   const testimonials = [
-    { name: "Me. Karim Benjelloun", role: "Notaire à Casablanca", content: "Daribati a révolutionné la gestion de mon étude. Mes clients sont ravis de pouvoir suivre l'avancement de leurs dossiers en temps réel. Un gain de temps considérable au quotidien.", initials: "KB" },
-    { name: "Fatima Zahra El Ouazzani", role: "Acquéreuse à Rabat", content: "Grâce à Daribati, j'ai pu suivre chaque étape de l'achat de mon appartement sans avoir à me déplacer. La transparence est exceptionnelle, je recommande vivement.", initials: "FE" },
-    { name: "Driss Amrani", role: "Promoteur immobilier à Marrakech", content: "Nous gérons plus de 200 dossiers par an et Daribati nous fait gagner un temps précieux. La génération de contrats par IA est tout simplement bluffante.", initials: "DA" },
+    { name: "Me. Karim Benjelloun", role: "Notaire à Casablanca", content: "NotaireFlow a révolutionné la gestion de mon étude. Mes clients sont ravis de pouvoir suivre l'avancement de leurs dossiers en temps réel. Un gain de temps considérable au quotidien.", initials: "KB" },
+    { name: "Fatima Zahra El Ouazzani", role: "Acquéreuse à Rabat", content: "Grâce à NotaireFlow, j'ai pu suivre chaque étape de l'achat de mon appartement sans avoir à me déplacer. La transparence est exceptionnelle, je recommande vivement.", initials: "FE" },
+    { name: "Driss Amrani", role: "Promoteur immobilier à Marrakech", content: "Nous gérons plus de 200 dossiers par an et NotaireFlow nous fait gagner un temps précieux. La génération de contrats par IA est tout simplement bluffante.", initials: "DA" },
     { name: "Nadia Bennis", role: "Responsable d'étude notariale à Fès", content: "L'outil le plus complet que j'ai utilisé. La gestion des paiements et des reçus automatiques nous a fait économiser des heures de travail administratif.", initials: "NB" },
   ]
 
