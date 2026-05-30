@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/db'
+import { cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
 import { ChartAreaInteractive } from '@/components/chart-area-interactive'
 import { DataTable } from '@/components/data-table'
 import Link from 'next/link'
@@ -6,29 +8,55 @@ import { Button } from '@/components/ui/button'
 import { ArrowUpRight, FileText, Users, FolderOpen, Euro } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-async function getData() {
-  const total = await prisma.dossier.count()
-  const enCours = await prisma.dossier.count({ where: { status: { not: 'TERMINE' } } })
-  const termines = await prisma.dossier.count({ where: { status: 'TERMINE' } })
-  const docsCount = await prisma.document.count()
-  const newClients = await prisma.user.count({ where: { role: 'CLIENT' } })
+export const dynamic = 'force-dynamic'
 
-  const payments = await prisma.payment.findMany({ select: { amount: true, paidAmount: true, status: true } })
-  const totalRevenue = payments.filter((p: any) => p.status === 'PAID').reduce((s: number, p: any) => s + p.paidAmount, 0)
-  const totalUnpaid = payments.filter((p: any) => p.status === 'UNPAID' || p.status === 'PARTIAL').reduce((s: number, p: any) => s + (p.amount - p.paidAmount), 0)
+async function getNotaireId(): Promise<string | null> {
+  try {
+    const cookieStore = await cookies()
+    const session = cookieStore.get('session')?.value
+    if (!session) return null
+    const { payload } = await jwtVerify(session, new TextEncoder().encode(process.env.JWT_SECRET || 'secret'))
+    return payload.sub as string
+  } catch {
+    return null
+  }
+}
+
+async function getData(notaireId: string) {
+  const dossierWhere = { createdById: notaireId }
+  const total = await prisma.dossier.count({ where: dossierWhere })
+  const enCours = await prisma.dossier.count({ where: { ...dossierWhere, status: { not: 'TERMINE' } } })
+  const termines = await prisma.dossier.count({ where: { ...dossierWhere, status: 'TERMINE' } })
+
+  const clientIds = await prisma.dossier.findMany({
+    where: { ...dossierWhere, clientId: { not: null } },
+    select: { clientId: true },
+    distinct: ['clientId'],
+  })
+  const newClients = clientIds.length
+
+  const dossierIds = (await prisma.dossier.findMany({ where: dossierWhere, select: { id: true } })).map(d => d.id)
+  const docsCount = await prisma.document.count({ where: { dossierId: { in: dossierIds } } })
+
+  const payments = await prisma.payment.findMany({
+    where: { dossierId: { in: dossierIds } },
+    select: { amount: true, paidAmount: true, status: true },
+  })
+  const totalRevenue = payments.filter((p) => p.status === 'PAID').reduce((s, p) => s + p.paidAmount, 0)
+  const totalUnpaid = payments.filter((p) => p.status === 'UNPAID' || p.status === 'PARTIAL').reduce((s, p) => s + (p.amount - p.paidAmount), 0)
 
   const recent = await prisma.dossier.findMany({
+    where: dossierWhere,
     take: 10,
     orderBy: { createdAt: 'desc' },
     include: { client: { select: { name: true } } },
   })
 
-  // Build daily dossier activity for the last 90 days
   const ninetyDaysAgo = new Date()
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
 
   const allDossiers = await prisma.dossier.findMany({
-    where: { createdAt: { gte: ninetyDaysAgo } },
+    where: { ...dossierWhere, createdAt: { gte: ninetyDaysAgo } },
     select: { createdAt: true, status: true },
   })
 
@@ -59,7 +87,9 @@ async function getData() {
 }
 
 export default async function NotaireDashboardPage() {
-  const data = await getData()
+  const notaireId = await getNotaireId()
+  if (!notaireId) return <div className="p-6 text-red-500">Non authentifié</div>
+  const data = await getData(notaireId)
 
   const quickCards = [
     { title: 'Dossiers en cours', value: data.enCours, icon: FolderOpen, trend: `${Math.round((data.enCours / Math.max(data.total, 1)) * 100)}% du total`, href: '/notaire/dossiers' },
