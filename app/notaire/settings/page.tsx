@@ -1,12 +1,20 @@
 import { prisma } from '@/lib/db'
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { AppSidebar } from '@/components/app-sidebar'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Settings } from 'lucide-react'
+import { cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
 import NotaireSettings from '../../../components/NotaireSettings'
 
+export const dynamic = 'force-dynamic'
+
 async function getNotaire() {
-  return prisma.user.findFirst({ where: { role: 'NOTAIRE' } })
+  try {
+    const cookieStore = await cookies()
+    const session = cookieStore.get('session')?.value
+    if (!session) return null
+    const { payload } = await jwtVerify(session, new TextEncoder().encode(process.env.JWT_SECRET || 'secret'))
+    return prisma.user.findUnique({ where: { id: payload.sub as string } })
+  } catch {
+    return null
+  }
 }
 
 export default async function SettingsPage() {
@@ -14,16 +22,10 @@ export default async function SettingsPage() {
   return (
     <div className="flex-1 space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Settings className="w-6 h-6" /> Paramètres
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight">Paramètres</h1>
         <p className="text-sm text-muted-foreground">Gérez les informations de votre compte notaire</p>
       </div>
-      <Card>
-        <CardContent className="p-6">
-          <NotaireSettings initialNotaire={notaire} />
-        </CardContent>
-      </Card>
+      <NotaireSettings initialNotaire={notaire} />
     </div>
   )
 }

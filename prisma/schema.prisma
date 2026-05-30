@@ -39,6 +39,8 @@ model User {
   avatar    String?  @db.Text
   cin       String?  @db.VarChar(50)
   disabled  Boolean  @default(false)
+  receiptHeader String? @db.Text
+  receiptFooter String? @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

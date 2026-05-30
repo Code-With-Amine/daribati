@@ -59,6 +59,14 @@ export default function LoginPage({ className, ...props }: React.ComponentProps<
 
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center bg-[oklch(0.14_0.015_260)] p-6 md:p-10 overflow-hidden">
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-[oklch(0.18_0.02_260)] border border-indigo-800/30 shadow-2xl">
+            <div className="w-12 h-12 rounded-full border-4 border-indigo-400/30 border-t-indigo-400 animate-spin" />
+            <p className="text-sm text-indigo-200/60">Connexion en cours...</p>
+          </div>
+        </div>
+      )}
       <div className="absolute inset-0 bg-gradient-to-b from-indigo-600/10 via-transparent to-transparent pointer-events-none" />
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-600/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="w-full max-w-sm md:max-w-4xl">

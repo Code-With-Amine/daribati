@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   try {
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { id: true, name: true, email: true, role: true, avatar: true, cin: true, phone: true },
+      select: { id: true, name: true, email: true, role: true, avatar: true, cin: true, phone: true, receiptHeader: true, receiptFooter: true },
     })
     if (!dbUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
@@ -43,18 +43,20 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json()
-    const { name, email, phone, avatar } = body
+    const { name, email, phone, avatar, receiptHeader, receiptFooter } = body
 
     const data: any = {}
     if (name !== undefined) data.name = name
     if (email !== undefined) data.email = email
     if (phone !== undefined) data.phone = phone
     if (avatar !== undefined) data.avatar = avatar
+    if (receiptHeader !== undefined) data.receiptHeader = receiptHeader
+    if (receiptFooter !== undefined) data.receiptFooter = receiptFooter
 
     const updated = await prisma.user.update({
       where: { id: user.id },
       data,
-      select: { id: true, name: true, email: true, role: true, avatar: true, cin: true, phone: true },
+      select: { id: true, name: true, email: true, role: true, avatar: true, cin: true, phone: true, receiptHeader: true, receiptFooter: true },
     })
 
     return NextResponse.json({ user: updated })
