@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
-import { Scale, LogOut, MessageSquare, Home } from 'lucide-react'
+import { Scale, LogOut, MessageSquare, Home, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ModeToggle } from '@/components/ui/toggole-mode'
@@ -38,6 +38,11 @@ export default async function ClientLayout({ children }: { children: React.React
               <Link href="/client/messages">
                 <Button variant="ghost" size="sm" className="text-muted-foreground">
                   <MessageSquare className="w-4 h-4 mr-1" /> Messages
+                </Button>
+              </Link>
+              <Link href="/client/settings">
+                <Button variant="ghost" size="sm" className="text-muted-foreground">
+                  <Settings className="w-4 h-4 mr-1" /> Paramètres
                 </Button>
               </Link>
               <ModeToggle />

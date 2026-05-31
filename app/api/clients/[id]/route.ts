@@ -1,58 +1,51 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireNotaire } from '@/app/api/auth/middleware'
 
-export async function PUT(request: Request, context: any) {
-  const id = context?.params?.id
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireNotaire(request)
+  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
+
+  const { id } = await params
+
+  const existing = await prisma.user.findFirst({
+    where: { id, role: 'CLIENT', notaireId: auth.user.id },
+  })
+  if (!existing) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+
   try {
-    const contentType = request.headers.get('content-type') || ''
-    let name = ''
-    let email = ''
-    let avatarUrl: string | null = null
+    const body = await request.json()
+    const { name, email, phone, cin, avatar } = body
 
-    if (contentType.includes('multipart/form-data')) {
-      const form = await request.formData()
-      name = String(form.get('name') || '')
-      email = String(form.get('email') || '')
-      const avatar = form.get('avatar') as File | null
-      if (avatar && (avatar as any).size) {
-        const buffer = Buffer.from(await (avatar as File).arrayBuffer())
-        const filename = `${Date.now()}-${(avatar as File).name}`
-        const fs = require('fs')
-        const path = require('path')
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-        try {
-          if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
-          fs.writeFileSync(path.join(uploadDir, filename), buffer)
-          avatarUrl = `/uploads/${filename}`
-        } catch (e) {
-          console.error('Upload error', e)
-        }
-      }
-    } else {
-      const body = await request.json()
-      name = String(body.name || '')
-      email = String(body.email || '')
-      if (body.avatar) avatarUrl = String(body.avatar)
-    }
+    const data: any = {}
+    if (name !== undefined) data.name = name
+    if (email !== undefined) data.email = email
+    if (phone !== undefined) data.phone = phone
+    if (cin !== undefined) data.cin = cin
+    if (avatar !== undefined) data.avatar = avatar
 
-    // Cast data as any to work around prisma client types until you run `npx prisma generate`
-    const data: any = { name, email }
-    if (avatarUrl) data.avatar = avatarUrl
-
-    const user = await prisma.user.update({ where: { id }, data: data as any })
-    const ua: any = user
-    return NextResponse.json({ client: { id: ua.id, name: ua.name, email: ua.email, avatar: ua.avatar } })
+    const user = await prisma.user.update({ where: { id }, data })
+    return NextResponse.json({ client: { id: user.id, name: user.name, email: user.email, avatar: user.avatar, phone: user.phone, cin: user.cin } })
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Failed' }, { status: 500 })
   }
 }
 
-export async function DELETE(request: Request, context: any) {
-  const id = context?.params?.id
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireNotaire(request)
+  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
+
+  const { id } = await params
+
+  const existing = await prisma.user.findFirst({
+    where: { id, role: 'CLIENT', notaireId: auth.user.id },
+  })
+  if (!existing) return NextResponse.json({ error: 'Client not found' }, { status: 404 })
+
   try {
     await prisma.user.delete({ where: { id } })
     return NextResponse.json({ ok: true })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Failed' }, { status: 500 })
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

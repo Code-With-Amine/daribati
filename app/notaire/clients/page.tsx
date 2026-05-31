@@ -1,20 +1,40 @@
 import { prisma } from '@/lib/db'
+import { cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Plus, Mail, Phone, User, FolderOpen } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Plus, Mail, Phone, FolderOpen } from 'lucide-react'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Card, CardContent } from '@/components/ui/card'
 import AddClientDialog from '@/components/AddClientDialog'
 
-async function getClients() {
-  return prisma.user.findMany({
-    where: { role: 'CLIENT' },
-    include: { _count: { select: { dossiers: true } } },
-    orderBy: { createdAt: 'desc' },
-  })
+async function getNotaireId() {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
+  if (!session) redirect('/login')
+
+  const { payload } = await jwtVerify(session, new TextEncoder().encode(process.env.JWT_SECRET || 'secret'))
+  return payload.sub as string
+}
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 }
 
 export default async function ClientsPage() {
-  const clients = await getClients()
+  const notaireId = await getNotaireId()
+
+  const clients = await prisma.user.findMany({
+    where: { role: 'CLIENT', notaireId },
+    include: { _count: { select: { dossiers: true } } },
+    orderBy: { createdAt: 'desc' },
+  })
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -45,9 +65,14 @@ export default async function ClientsPage() {
             <Card key={client.id} className="group hover:shadow-md transition-all">
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
-                    <User className="w-6 h-6 text-primary" />
-                  </div>
+                  <Avatar className="w-12 h-12 border-2 border-muted/30">
+                    {client.avatar ? (
+                      <AvatarImage src={client.avatar} alt={client.name} />
+                    ) : null}
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                      {getInitials(client.name || '?')}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="flex-1 min-w-0 space-y-2">
                     <div>
                       <h3 className="font-semibold truncate">{client.name}</h3>

@@ -12,7 +12,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Plus, Trash2, ToggleLeft, ToggleRight, Home } from 'lucide-react'
+import { Loader2, Plus, Trash2, ToggleLeft, ToggleRight, Home, Lock, Eye, EyeOff } from 'lucide-react'
 import { ModeToggle } from '@/components/ui/toggole-mode'
 
 interface Notaire {
@@ -34,6 +34,37 @@ export default function AdminPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [phone, setPhone] = useState('')
+  const [ownerSettingsOpen, setOwnerSettingsOpen] = useState(false)
+  const [ownerCurrentPassword, setOwnerCurrentPassword] = useState('')
+  const [ownerNewPassword, setOwnerNewPassword] = useState('')
+  const [ownerPasswordSaving, setOwnerPasswordSaving] = useState(false)
+  const [showOwnerCurrent, setShowOwnerCurrent] = useState(false)
+  const [showOwnerNew, setShowOwnerNew] = useState(false)
+
+  async function handleOwnerPasswordChange(e: React.FormEvent) {
+    e.preventDefault()
+    setOwnerPasswordSaving(true)
+    try {
+      const token = localStorage.getItem('token')
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ currentPassword: ownerCurrentPassword, newPassword: ownerNewPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setOwnerCurrentPassword('')
+      setOwnerNewPassword('')
+      setOwnerSettingsOpen(false)
+      alert('Mot de passe mis à jour')
+    } catch (err: any) {
+      alert(err.message)
+    } finally {
+      setOwnerPasswordSaving(false)
+    }
+  }
 
   async function fetchNotaires() {
     const r = await fetch('/api/admin/notaires')
@@ -121,8 +152,49 @@ export default function AdminPage() {
               </div>
             </DialogContent>
             </Dialog>
+            <Button variant="ghost" size="sm" className="text-indigo-200/60 hover:text-white" onClick={() => setOwnerSettingsOpen(!ownerSettingsOpen)}>
+              <Lock className="h-4 w-4 mr-1" /> {ownerSettingsOpen ? 'Fermer' : 'Mot de passe'}
+            </Button>
           </div>
         </div>
+
+        {ownerSettingsOpen && (
+          <div className="mb-6 rounded-lg border border-indigo-800/40 bg-[oklch(0.22_0.025_260)] p-6">
+            <h3 className="text-white font-semibold mb-4">Changer votre mot de passe (Admin)</h3>
+            <form onSubmit={handleOwnerPasswordChange} className="space-y-3 max-w-md">
+              <div className="relative">
+                <Input
+                  type={showOwnerCurrent ? 'text' : 'password'}
+                  placeholder="Mot de passe actuel"
+                  value={ownerCurrentPassword}
+                  onChange={e => setOwnerCurrentPassword(e.target.value)}
+                  required
+                  className="bg-[oklch(0.18_0.02_260)] border-indigo-800/40 text-white placeholder:text-indigo-200/30"
+                />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-200/40" onClick={() => setShowOwnerCurrent(!showOwnerCurrent)}>
+                  {showOwnerCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <div className="relative">
+                <Input
+                  type={showOwnerNew ? 'text' : 'password'}
+                  placeholder="Nouveau mot de passe (8 caractères min)"
+                  value={ownerNewPassword}
+                  onChange={e => setOwnerNewPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className="bg-[oklch(0.18_0.02_260)] border-indigo-800/40 text-white placeholder:text-indigo-200/30"
+                />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-200/40" onClick={() => setShowOwnerNew(!showOwnerNew)}>
+                  {showOwnerNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <Button type="submit" disabled={ownerPasswordSaving} className="bg-indigo-600 hover:bg-indigo-500">
+                {ownerPasswordSaving ? 'Enregistrement...' : 'Changer le mot de passe'}
+              </Button>
+            </form>
+          </div>
+        )}
 
         <div className="rounded-lg border border-indigo-800/40 bg-[oklch(0.22_0.025_260)] overflow-hidden">
           <Table>

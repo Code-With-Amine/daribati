@@ -33,7 +33,6 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { User as UserIcon } from "lucide-react"
 
 // Minimal schema for the table rows
 export const schema = z.object({
@@ -112,8 +111,8 @@ export function DataTable({ data: initialData }: { data: RowData[] }) {
                         {clientObj.avatar ? (
                           <AvatarImage src={clientObj.avatar} alt={clientObj.name} />
                         ) : (
-                          <AvatarFallback>
-                            <UserIcon className="size-4" />
+                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                            {(clientObj.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                           </AvatarFallback>
                         )}
                       </Avatar>

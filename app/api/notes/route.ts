@@ -48,6 +48,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'dossierId et content requis' }, { status: 400 })
     }
 
+    const dossier = await prisma.dossier.findFirst({
+      where: user.role === 'NOTAIRE'
+        ? { id: dossierId, createdById: user.id }
+        : { id: dossierId, clientId: user.id },
+    })
+    if (!dossier) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
+
     const note = await prisma.note.create({
       data: { dossierId, content, userId: user.id },
     })

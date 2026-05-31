@@ -18,6 +18,17 @@ export default function LandingPage() {
 
   useEffect(() => { setMounted(true) }, [])
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "NotaireFlow",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    description: "Plateforme numérique complète pour la gestion d'étude notariale : dossiers, contrats, paiements et communication client.",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "MAD" },
+    author: { "@type": "Organization", name: "NotaireFlow" },
+  }
+
   const isDark = !mounted ? true : theme === 'dark'
 
   useEffect(() => {
@@ -108,7 +119,9 @@ export default function LandingPage() {
   ]
 
   return (
-    <div className={`min-h-screen ${bg} ${text} overflow-x-hidden transition-colors duration-300`}>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <div className={`min-h-screen ${bg} ${text} overflow-x-hidden transition-colors duration-300`}>
       {/* Navbar */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? `${navBg} backdrop-blur-lg border-b ${navBorder}` : "bg-transparent"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -411,5 +424,6 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+    </>
   )
 }

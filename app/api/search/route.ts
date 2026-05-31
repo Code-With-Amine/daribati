@@ -16,6 +16,7 @@ export async function GET(req: Request) {
   if (user.role === 'NOTAIRE') {
     results.dossiers = await prisma.dossier.findMany({
       where: {
+        createdById: user.id,
         OR: [
           { dossierNumber: { contains: q, mode: 'insensitive' } },
           { title: { contains: q, mode: 'insensitive' } },
@@ -31,6 +32,7 @@ export async function GET(req: Request) {
     results.clients = await prisma.user.findMany({
       where: {
         role: 'CLIENT',
+        notaireId: user.id,
         OR: [
           { name: { contains: q, mode: 'insensitive' } },
           { email: { contains: q, mode: 'insensitive' } },
@@ -42,7 +44,10 @@ export async function GET(req: Request) {
     })
 
     results.documents = await prisma.document.findMany({
-      where: { name: { contains: q, mode: 'insensitive' } },
+      where: {
+        name: { contains: q, mode: 'insensitive' },
+        dossier: { createdById: user.id },
+      },
       include: { dossier: { select: { dossierNumber: true } } },
       take: 10,
     })

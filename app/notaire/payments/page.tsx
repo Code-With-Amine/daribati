@@ -1,6 +1,9 @@
 export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/db'
+import { cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -13,8 +16,19 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
   PAID: { label: 'Payé', variant: 'default' },
 }
 
+async function getNotaireId(): Promise<string> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
+  if (!session) redirect('/login')
+  const { payload } = await jwtVerify(session, new TextEncoder().encode(process.env.JWT_SECRET || 'secret'))
+  return payload.sub as string
+}
+
 export default async function PaymentsPage() {
+  const notaireId = await getNotaireId()
+
   const payments = await prisma.payment.findMany({
+    where: { dossier: { createdById: notaireId } },
     include: { dossier: { select: { dossierNumber: true, title: true, client: { select: { name: true } } } } },
     orderBy: { createdAt: 'desc' },
     take: 50,

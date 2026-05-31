@@ -9,13 +9,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Edit, Mail, Phone, User, Clock, Download } from 'lucide-react'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { ArrowLeft, Edit, Mail, Phone, Clock, Download } from 'lucide-react'
 
 async function getDossier(idOrRef: string) {
   const isUuid = /^[0-9a-fA-F-]{36}$/.test(idOrRef)
   const include = {
     documents: { orderBy: { createdAt: 'desc' as const } },
-    client: { select: { id: true, name: true, email: true, phone: true, cin: true } },
+    client: { select: { id: true, name: true, email: true, phone: true, cin: true, avatar: true } },
     statusHistory: { orderBy: { createdAt: 'desc' as const } },
     payments: { orderBy: { createdAt: 'desc' as const } },
     contracts: { orderBy: { createdAt: 'desc' as const } },
@@ -24,6 +25,10 @@ async function getDossier(idOrRef: string) {
   }
   if (isUuid) return prisma.dossier.findUnique({ where: { id: idOrRef }, include })
   return prisma.dossier.findFirst({ where: { dossierNumber: idOrRef }, include })
+}
+
+function getInitials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
 const statusLabels: Record<string, string> = {
@@ -76,9 +81,10 @@ export default async function DossierPage({ params }: { params: Promise<{ id: st
       <Card>
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <User className="w-6 h-6 text-primary" />
-            </div>
+            <Avatar className="w-12 h-12">
+              {dossier.client?.avatar ? <AvatarImage src={dossier.client.avatar} alt={dossier.client.name} /> : null}
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">{getInitials(dossier.client?.name || '?')}</AvatarFallback>
+            </Avatar>
             <div className="space-y-1">
               <p className="font-semibold text-lg">{dossier.client?.name || '—'}</p>
               {dossier.client?.cin && <p className="text-sm text-muted-foreground">CIN: {dossier.client.cin}</p>}

@@ -24,7 +24,7 @@ function Nav() {
           <Link href="/">
             <Avatar className="cursor-pointer">
               <AvatarImage src="/logo.png" />
-              <AvatarFallback>Daribty Logo</AvatarFallback>
+              <AvatarFallback>NF</AvatarFallback>
             </Avatar>
           </Link>
         </div>

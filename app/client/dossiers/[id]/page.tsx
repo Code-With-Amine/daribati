@@ -149,14 +149,17 @@ export default async function ClientDossierPage({ params }: { params: Promise<{ 
         )}
 
         {dossier.contracts.length > 0 && (
-          <div className="bg-white rounded-xl p-6 border">
+          <div className="bg-white rounded-xl p-6 border col-span-full">
             <h3 className="font-semibold text-lg mb-4">Contrats</h3>
             <div className="space-y-3">
               {dossier.contracts.map((c: any) => (
-                <div key={c.id} className="p-3 rounded-lg border">
-                  <p className="text-sm font-medium">{c.title}</p>
-                  <p className="text-xs text-gray-500">Généré le {new Date(c.generatedAt).toLocaleDateString('fr-FR')}</p>
-                </div>
+                <details key={c.id} className="p-3 rounded-lg border group">
+                  <summary className="text-sm font-medium cursor-pointer list-none flex items-center justify-between">
+                    <span>{c.title}</span>
+                    <span className="text-xs text-gray-400">{new Date(c.createdAt).toLocaleDateString('fr-FR')}</span>
+                  </summary>
+                  <pre className="mt-3 p-4 bg-gray-50 rounded text-xs whitespace-pre-wrap font-sans leading-relaxed max-h-96 overflow-y-auto">{c.content}</pre>
+                </details>
               ))}
             </div>
           </div>

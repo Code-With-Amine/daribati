@@ -16,8 +16,37 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NotaireFlow | Gestion de dossiers notariaux",
-  description: "Plateforme de gestion numérique pour notaires. Gérez vos dossiers, clients, documents et paiements en un seul endroit.",
+  title: {
+    default: "NotaireFlow | Gestion de dossiers notariaux",
+    template: "%s | NotaireFlow",
+  },
+  description: "Plateforme de gestion numérique pour notaires. Gérez vos dossiers, clients, documents, contrats et paiements en un seul endroit. Simplifiez votre étude notariale avec NotaireFlow.",
+  keywords: ["notaire", "gestion dossiers notariaux", "logiciel notaire", "étude notariale", "contrats notariés", "paiements notaires", "Maroc"],
+  authors: [{ name: "NotaireFlow" }],
+  creator: "NotaireFlow",
+  publisher: "NotaireFlow",
+  metadataBase: new URL("https://notaireflow.com"),
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "NotaireFlow",
+    title: "NotaireFlow | Gestion de dossiers notariaux",
+    description: "Plateforme numérique complète pour la gestion d'étude notariale : dossiers, contrats, paiements et communication client.",
+    images: [{ url: "/icon512_rounded.png", width: 512, height: 512 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NotaireFlow | Gestion de dossiers notariaux",
+    description: "Plateforme numérique complète pour la gestion d'étude notariale.",
+    images: ["/icon512_rounded.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: "https://notaireflow.com",
+  },
 };
 
 
@@ -31,8 +60,7 @@ export default function RootLayout({
       <head>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#262ee3" />
-  {/* favicon uses /TNBLogo.png — overwrite this file in public/ with your logo */}
-  <link rel="icon" href="/TNBLogo.png" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/icon512_rounded.png" />
       </head>
       <body
