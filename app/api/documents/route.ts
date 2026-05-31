@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireNotaire } from '@/app/api/auth/middleware'
 
 export async function POST(req: Request) {
+  const auth = await requireNotaire(req)
+  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
+
   try {
-    // Accept both form-data (from legacy clients) and JSON
     let dossierId: string | undefined
     let name: string | undefined
     let fileUrl: string | undefined
@@ -21,12 +24,14 @@ export async function POST(req: Request) {
       fileUrl = form.get('fileUrl') as string
     }
 
-  if (!dossierId || !name || !fileUrl) return NextResponse.json({ error: 'Dossier, nom ou url de fichier manquant' }, { status: 400 })
+    if (!dossierId || !name || !fileUrl) return NextResponse.json({ error: 'Dossier, nom ou url de fichier manquant' }, { status: 400 })
+
+    const dossier = await prisma.dossier.findFirst({ where: { id: dossierId, createdById: auth.user.id } })
+    if (!dossier) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
 
     const doc = await prisma.document.create({ data: { dossierId, name, fileUrl } })
     return NextResponse.json({ doc }, { status: 201 })
   } catch (err: any) {
-    console.error('POST /api/documents error:', err)
-    return NextResponse.json({ error: 'Impossible de créer le document. Réessayez plus tard.' }, { status: 500 })
+    return NextResponse.json({ error: 'Impossible de créer le document' }, { status: 500 })
   }
 }

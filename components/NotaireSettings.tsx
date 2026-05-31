@@ -15,7 +15,9 @@ export default function NotaireSettings({ initialNotaire }: any) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [password, setPassword] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [passwordSaving, setPasswordSaving] = useState(false)
   const [receiptHeader, setReceiptHeader] = useState(initialNotaire?.receiptHeader || '')
   const [receiptFooter, setReceiptFooter] = useState(initialNotaire?.receiptFooter || '')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -64,6 +66,27 @@ export default function NotaireSettings({ initialNotaire }: any) {
       toast.error(err?.message || 'Erreur')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handlePasswordChange(e: React.FormEvent) {
+    e.preventDefault()
+    setPasswordSaving(true)
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setCurrentPassword('')
+      setNewPassword('')
+      toast.success('Mot de passe mis à jour')
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setPasswordSaving(false)
     }
   }
 
@@ -128,9 +151,15 @@ ${' '.repeat(22)}Cachet & Signature : _________________`
                   </div>
                 </div>
 
-                <div>
-                  <Label>Nouveau mot de passe</Label>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Laisser vide pour conserver" />
+                <div className="border-t pt-4 mt-4">
+                  <p className="text-sm font-medium mb-2">Changer le mot de passe</p>
+                  <div className="space-y-2">
+                    <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Mot de passe actuel" />
+                    <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nouveau mot de passe (8 caractères min)" minLength={8} />
+                    <Button type="button" variant="outline" size="sm" onClick={handlePasswordChange} disabled={passwordSaving || !currentPassword || !newPassword}>
+                      {passwordSaving ? 'Enregistrement...' : 'Changer le mot de passe'}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

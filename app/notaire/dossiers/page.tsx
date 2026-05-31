@@ -1,14 +1,30 @@
 import { prisma } from '@/lib/db'
+import { cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Plus, Search, ArrowUpRight } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import DossierStatusBadge from '@/components/DossierStatusBadge'
 
-async function getDossiers(searchQuery?: string) {
-  const where: any = {}
+function getInitials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
+
+async function getNotaireId(): Promise<string> {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
+  if (!session) redirect('/login')
+  const { payload } = await jwtVerify(session, new TextEncoder().encode(process.env.JWT_SECRET || 'secret'))
+  return payload.sub as string
+}
+
+async function getDossiers(notaireId: string, searchQuery?: string) {
+  const where: any = { createdById: notaireId }
   if (searchQuery && searchQuery.length >= 2) {
     where.OR = [
       { dossierNumber: { contains: searchQuery, mode: 'insensitive' } },
@@ -19,7 +35,7 @@ async function getDossiers(searchQuery?: string) {
   }
   return prisma.dossier.findMany({
     where,
-    include: { client: { select: { name: true, email: true, cin: true } } },
+    include: { client: { select: { name: true, email: true, cin: true, avatar: true } } },
     orderBy: { updatedAt: 'desc' },
   })
 }
@@ -27,7 +43,8 @@ async function getDossiers(searchQuery?: string) {
 export default async function DossiersPage(props: { searchParams?: Promise<{ q?: string }> }) {
   const searchParams = props.searchParams ? await props.searchParams : undefined
   const q = searchParams?.q || ''
-  const dossiers = await getDossiers(q)
+  const notaireId = await getNotaireId()
+  const dossiers = await getDossiers(notaireId, q)
 
   const stats = {
     total: dossiers.length,
@@ -95,8 +112,16 @@ export default async function DossiersPage(props: { searchParams?: Promise<{ q?:
                   <TableCell className="font-mono text-sm font-medium">{d.dossierNumber}</TableCell>
                   <TableCell className="font-medium">{d.title || '—'}</TableCell>
                   <TableCell>
-                    <div className="font-medium text-sm">{d.client?.name || '—'}</div>
-                    {d.client?.cin && <div className="text-xs text-muted-foreground">{d.client.cin}</div>}
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-7 w-7">
+                        {d.client?.avatar ? <AvatarImage src={d.client.avatar} alt={d.client.name} /> : null}
+                        <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{getInitials(d.client?.name || '?')}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium text-sm">{d.client?.name || '—'}</div>
+                        {d.client?.cin && <div className="text-xs text-muted-foreground">{d.client.cin}</div>}
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell><DossierStatusBadge status={d.status} /></TableCell>
                   <TableCell className="text-muted-foreground text-sm">{new Date(d.updatedAt).toLocaleDateString('fr-FR')}</TableCell>

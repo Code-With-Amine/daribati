@@ -15,6 +15,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'dossierId requis' }, { status: 400 })
     }
 
+    const dossier = await prisma.dossier.findFirst({ where: { id: dossierId, createdById: auth.user.id } })
+    if (!dossier) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
+
     const result = await generateContract({
       prompt: prompt || '',
       dossierId,

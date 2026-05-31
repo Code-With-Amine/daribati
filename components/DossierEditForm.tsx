@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { ChevronDown } from 'lucide-react'
 
 export default function DossierEditForm({ initialDossier, clients }: { initialDossier: any; clients: any[] }) {
@@ -79,9 +80,10 @@ export default function DossierEditForm({ initialDossier, clients }: { initialDo
               <Button variant="outline" role="combobox" aria-expanded={clientOpen} className="w-full justify-between h-auto min-h-[2.5rem]">
                 {selectedClient ? (
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <span className="text-xs font-medium text-primary">{selectedClient.name.slice(0, 2).toUpperCase()}</span>
-                    </div>
+                    <Avatar className="h-8 w-8">
+                      {selectedClient.avatar ? <AvatarImage src={selectedClient.avatar} alt={selectedClient.name} /> : null}
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">{selectedClient.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
                     <div className="text-left">
                       <p className="text-sm font-medium">{selectedClient.name}</p>
                       <p className="text-xs text-muted-foreground">
@@ -105,9 +107,10 @@ export default function DossierEditForm({ initialDossier, clients }: { initialDo
                     {filteredClients.map((client) => (
                       <CommandItem key={client.id} value={client.id} onSelect={(currentValue) => { setClientId(currentValue); setClientOpen(false); setSearchQuery('') }}>
                         <div className="flex items-center gap-3 w-full">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-medium text-primary">{client.name.slice(0, 2).toUpperCase()}</span>
-                          </div>
+                          <Avatar className="h-8 w-8">
+                            {client.avatar ? <AvatarImage src={client.avatar} alt={client.name} /> : null}
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary">{client.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium">{client.name}</p>
                             <p className="text-xs text-muted-foreground truncate">

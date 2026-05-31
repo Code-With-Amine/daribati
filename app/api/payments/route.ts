@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   const qs = new URL(req.url).searchParams
   const dossierId = qs.get('dossierId')
 
-  const where: any = {}
+  const where: any = { dossier: { createdById: auth.user.id } }
   if (dossierId) where.dossierId = dossierId
 
   const payments = await prisma.payment.findMany({
@@ -32,6 +32,9 @@ export async function POST(req: Request) {
     if (!dossierId || amount === undefined) {
       return NextResponse.json({ error: 'dossierId et amount requis' }, { status: 400 })
     }
+
+    const dossier = await prisma.dossier.findFirst({ where: { id: dossierId, createdById: auth.user.id } })
+    if (!dossier) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
 
     const payment = await prisma.payment.create({
       data: {

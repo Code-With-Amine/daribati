@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { requireNotaire } from '@/app/api/auth/middleware'
 import bcrypt from 'bcryptjs'
 
 function genPassword(len = 10) {
@@ -10,48 +11,49 @@ function genPassword(len = 10) {
 }
 
 export async function GET(req: Request) {
+  const auth = await requireNotaire(req)
+  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
+
   try {
-    // List clients; if notaireId is provided on the querystring, filter by it
-    const url = new URL(req.url)
-    const notaireId = url.searchParams.get('notaireId')
-    const where: any = { role: 'CLIENT' }
-    if (notaireId) where.notaireId = notaireId
-    const clients = await prisma.user.findMany({ where, select: { id: true, name: true, email: true, phone: true, cin: true, avatar: true } })
+    const clients = await prisma.user.findMany({
+      where: { role: 'CLIENT', notaireId: auth.user.id },
+      select: { id: true, name: true, email: true, phone: true, cin: true, avatar: true },
+      orderBy: { createdAt: 'desc' },
+    })
     return NextResponse.json({ clients })
   } catch (err: any) {
-    console.error('GET /api/clients error:', err)
-    return NextResponse.json({ error: String(err?.message || err), stack: err?.stack }, { status: 500 })
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
 
 export async function POST(req: Request) {
+  const auth = await requireNotaire(req)
+  if ('error' in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
+
   try {
     const body = await req.json()
-  const { name, email, password } = body
-    if (!name || !email) return NextResponse.json({ error: 'Missing' }, { status: 400 })
+    const { name, email, password } = body
+    if (!name || !email) return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
 
     const tempPassword = password || genPassword(10)
     const hashed = await bcrypt.hash(tempPassword, 10)
-  const { phone, notaireId, cin, avatar } = body
+    const { phone, cin, avatar } = body
 
-    // Build data using accepted Prisma fields; notaireId can be null
-  const data: any = {
-    name,
-    email,
-    role: 'CLIENT',
-    password: hashed,
-  }
-  if (phone) data.phone = phone
-  if (cin) data.cin = cin
-  if (avatar) data.avatar = avatar
-  data.notaireId = notaireId || null
+    const client = await prisma.user.create({
+      data: {
+        name,
+        email,
+        role: 'CLIENT',
+        password: hashed,
+        phone: phone || null,
+        cin: cin || null,
+        avatar: avatar || null,
+        notaireId: auth.user.id,
+      },
+    })
 
-  const client = await prisma.user.create({ data })
-
-    // We no longer send emails automatically. It's up to the notaire to provide credentials to their client.
     return NextResponse.json({ client, tempPassword }, { status: 201 })
   } catch (err: any) {
-    console.error('POST /api/clients error:', err)
-    return NextResponse.json({ error: String(err?.message || err), stack: err?.stack }, { status: 500 })
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

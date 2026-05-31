@@ -30,7 +30,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
   const { id } = await params
   try {
-    const doc = await prisma.document.findUnique({ where: { id } })
+    const doc = await prisma.document.findFirst({
+      where: { id, dossier: user.role === 'NOTAIRE' ? { createdById: user.id } : { clientId: user.id } },
+    })
     if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
 
     if (doc.fileUrl.startsWith('/uploads/')) {
@@ -61,6 +63,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!id) {
     return NextResponse.json({ error: "Identifiant du document manquant" }, { status: 400 })
   }
+
+  const existing = await prisma.document.findFirst({
+    where: { id, dossier: user.role === 'NOTAIRE' ? { createdById: user.id } : { clientId: user.id } },
+  })
+  if (!existing) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
 
   try {
     const contentType = req.headers.get('content-type') || ''

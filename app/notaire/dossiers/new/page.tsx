@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, Search, User, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Search, ChevronDown } from 'lucide-react'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { cn } from '@/lib/utils'
@@ -109,9 +110,10 @@ export default function NewDossierPage() {
                   >
                     {selectedClient ? (
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <span className="text-xs font-medium text-primary">{selectedClient.name.slice(0, 2).toUpperCase()}</span>
-                        </div>
+                        <Avatar className="h-8 w-8">
+                          {selectedClient.avatar ? <AvatarImage src={selectedClient.avatar} alt={selectedClient.name} /> : null}
+                          <AvatarFallback className="text-xs bg-primary/10 text-primary">{selectedClient.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
                         <div className="text-left">
                           <p className="text-sm font-medium">{selectedClient.name}</p>
                           <p className="text-xs text-muted-foreground">
@@ -145,9 +147,10 @@ export default function NewDossierPage() {
                             }}
                           >
                             <div className="flex items-center gap-3 w-full">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                <span className="text-xs font-medium text-primary">{client.name.slice(0, 2).toUpperCase()}</span>
-                              </div>
+                              <Avatar className="h-8 w-8">
+                                {client.avatar ? <AvatarImage src={client.avatar} alt={client.name} /> : null}
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary">{client.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                              </Avatar>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium">{client.name}</p>
                                 <p className="text-xs text-muted-foreground truncate">

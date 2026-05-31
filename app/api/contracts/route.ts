@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'dossierId requis' }, { status: 400 })
     }
 
-    const dossier = await prisma.dossier.findUnique({ where: { id: dossierId } })
+    const dossier = await prisma.dossier.findFirst({ where: { id: dossierId, createdById: auth.user.id } })
     if (!dossier) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
 
     if (method === 'TEMPLATE' && !templateId) {
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
   const qs = new URL(req.url).searchParams
   const dossierId = qs.get('dossierId')
 
-  const where: any = {}
+  const where: any = { dossier: { createdById: auth.user.id } }
   if (dossierId) where.dossierId = dossierId
 
   const contracts = await prisma.contract.findMany({

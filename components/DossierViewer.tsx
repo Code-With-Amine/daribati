@@ -5,6 +5,7 @@ import DossierClient from './DossierClient'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
 import {
   AlertDialog,
@@ -127,9 +128,15 @@ export default function DossierViewer({ dossierId, initialDocs, client }: { doss
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold">{client?.name || 'Client'}</h2>
-          <div className="text-sm text-muted-foreground">{client?.email}</div>
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            {client?.avatar ? <AvatarImage src={client.avatar} alt={client.name} /> : null}
+            <AvatarFallback className="bg-primary/10 text-primary text-xs">{(client?.name || '?').slice(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h2 className="text-xl font-bold">{client?.name || 'Client'}</h2>
+            <div className="text-sm text-muted-foreground">{client?.email}</div>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => window.location.href = '/notaire/dossiers'}>Retour</Button>
